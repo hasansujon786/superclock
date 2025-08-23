@@ -1,0 +1,102 @@
+package app
+
+import tea "github.com/charmbracelet/bubbletea"
+
+type appState int
+
+const (
+	stopWatch appState = iota
+	timer
+	worldclock
+)
+
+type App struct {
+	state appState
+
+	width  int
+	height int
+}
+
+func NewApp() App {
+	return App{
+		state: timer,
+	}
+}
+
+func (a App) Init() tea.Cmd { return nil }
+
+func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch a.state {
+	case timer:
+		switch m := msg.(type) {
+		case tea.KeyMsg:
+			s := m.String()
+			switch s {
+			// case "up", "k":
+			// 	a.selectedIdx = clamp(a.selectedIdx-1, 0, len(a.menuItems)-1)
+			// case "down", "j":
+			// 	a.selectedIdx = clamp(a.selectedIdx+1, 0, len(a.menuItems)-1)
+			// case "left", "h":
+			// 	a.selectedIdx = clamp(a.selectedIdx-1, 0, len(a.menuItems)-1)
+			// case "right", "l":
+			// 	a.selectedIdx = clamp(a.selectedIdx+1, 0, len(a.menuItems)-1)
+			// case "a":
+			// 	a.autoCheck = !a.autoCheck
+			// case "t":
+			// 	a.timerEnabled = !a.timerEnabled
+			// case "enter":
+			// 	gm, cmd := a.startGame()
+			// 	a.game = gm
+			// 	a.state = stateGame
+			// 	return a, cmd
+			case "tab":
+				a.state = stopWatch
+			case "q", "esc", "ctrl+c":
+				return a, tea.Quit
+			}
+		case tea.WindowSizeMsg:
+			a.width, a.height = m.Width, m.Height
+		}
+		return a, nil
+	case stopWatch:
+		switch m := msg.(type) {
+		case tea.KeyMsg:
+			s := m.String()
+			switch s {
+			// case "up", "k":
+			// 	a.selectedIdx = clamp(a.selectedIdx-1, 0, len(a.menuItems)-1)
+			// case "down", "j":
+			// 	a.selectedIdx = clamp(a.selectedIdx+1, 0, len(a.menuItems)-1)
+			// case "left", "h":
+			// 	a.selectedIdx = clamp(a.selectedIdx-1, 0, len(a.menuItems)-1)
+			// case "right", "l":
+			// 	a.selectedIdx = clamp(a.selectedIdx+1, 0, len(a.menuItems)-1)
+			// case "a":
+			// 	a.autoCheck = !a.autoCheck
+			// case "t":
+			// 	a.timerEnabled = !a.timerEnabled
+			// case "enter":
+			// 	gm, cmd := a.startGame()
+			// 	a.game = gm
+			// 	a.state = stateGame
+			// 	return a, cmd
+			case "q", "esc", "ctrl+c":
+				return a, tea.Quit
+			}
+		case tea.WindowSizeMsg:
+			a.width, a.height = m.Width, m.Height
+		}
+		return a, nil
+	}
+	return a, nil
+}
+
+func (a App) View() string {
+	switch a.state {
+	case timer:
+		return "timer"
+	case stopWatch:
+		return "stopWatch"
+	}
+	return ""
+}
