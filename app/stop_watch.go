@@ -7,6 +7,9 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hasan/clock-tui/app/components"
+	"github.com/hasan/clock-tui/app/styles"
+	"github.com/hasan/clock-tui/app/utils"
 )
 
 type StopWatchModel struct {
@@ -54,53 +57,29 @@ func (m StopWatchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // ------------------ View Function ----------------
 
 func (m StopWatchModel) View() string {
-	boxStyle := lipgloss.NewStyle().
-		Width(40).
-		Height(12).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("63")).
-		Padding(0, 1)
-
-	contentWidth := boxStyle.GetWidth() - 2
-
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("205")).
-		// Background(lipgloss.Color("240")).
-		Padding(0, 1).
-		MarginBottom(1).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("240"))
-
-	time := lipgloss.Place(
-		contentWidth, 2,
-		lipgloss.Center, lipgloss.Center,
-		titleStyle.Render(formatStopwatch(m.stopwatch.Elapsed())),
-	)
+	contentWidth := styles.ContainerStyle.GetWidth() - 2
+	timeDigit := components.TimerDigit(utils.FormatStopwatch(m.stopwatch.Elapsed()), contentWidth, components.NerdFont)
 
 	laps := []string{}
 	for _, lap := range m.laps {
 		laps = append(laps, buildLapItem(lap))
 	}
+	lapList := lipgloss.JoinVertical(lipgloss.Center, laps...)
 
-	lapsList := lipgloss.JoinVertical(lipgloss.Center, laps...)
-
-	content := lipgloss.JoinVertical(lipgloss.Center, time, lapsList)
-	box := boxStyle.Render(content)
+	header := styles.HeaderStyle.Render("  ⏱  Stop Watch   ")
+	content := lipgloss.JoinVertical(lipgloss.Center, timeDigit, " ", lapList)
+	box := styles.ContainerStyle.Render(content)
 	help := buildHelp(m.stopwatch.Running())
 
-	return lipgloss.JoinVertical(lipgloss.Center, box, help)
+	return lipgloss.JoinVertical(lipgloss.Center, header, box, help)
 }
 
 func buildHelp(running bool) string {
-	footerStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("240")).
-		MarginTop(1)
 
-	s := If(running, "s: stop ", "s: start")
+	s := utils.If(running, "s: stop ", "s: start")
 	s += " • r: reset • space: lap • q: quit"
 
-	return footerStyle.Render(s)
+	return styles.FooterStyle.Render(s)
 }
 
 // ------------------ Lap Function -------------------
@@ -112,15 +91,16 @@ type lap struct {
 }
 
 func buildLapItem(item lap) string {
-	greyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	greyStyle := lipgloss.NewStyle().Foreground(styles.ThemeColors.Muted)
+	greenStyle := lipgloss.NewStyle().Foreground(styles.ThemeColors.Success)
 
 	return lipgloss.JoinHorizontal(
 		lipgloss.Center,
-		SpaceBetween(
+		utils.SpaceBetween(
 			30,
-			fmt.Sprintf("%v   %02d ", greyStyle.Render("▸"), item.index),
-			greyStyle.Render("+"+formatStopwatch(item.diff)),
-			formatStopwatch(item.time),
+			fmt.Sprintf("%v   %02d ", greenStyle.Render(""), item.index),
+			greyStyle.Render("+"+utils.FormatStopwatch(item.diff)),
+			utils.FormatStopwatch(item.time),
 		)...,
 	)
 }

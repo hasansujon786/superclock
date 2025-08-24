@@ -1,4 +1,4 @@
-module teatest
+module github.com/hasan/clock-tui
 
 go 1.24.3
 

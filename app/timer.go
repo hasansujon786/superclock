@@ -1,8 +1,11 @@
 package app
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hasan/clock-tui/app/styles"
 )
 
 // --- Timer model ---
@@ -37,33 +40,23 @@ func (m TimerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m TimerModel) View() string {
-	boxStyle := lipgloss.NewStyle().
-		Width(40).
-		Height(12).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("63")).
-		Padding(0, 1)
-
-	contentWidth := boxStyle.GetWidth() - 2
+	contentWidth := styles.ContainerStyle.GetWidth() - 2
 
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("205")).
+		Foreground(styles.ThemeColors.Primary).
 		Underline(true).
 		// Margin(1, 0).
 		Width(contentWidth).
 		AlignHorizontal(lipgloss.Center)
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("240")).
-		MarginTop(1)
+	time := titleStyle.Render(fmt.Sprintf("%d", m.count))
+	footer := styles.FooterStyle.Render("↑/↓ to change count • q to quit")
 
-	title := titleStyle.Render("hasan")
-	footer := footerStyle.Render("↑/↓ to change count • q to quit")
+	header := styles.HeaderStyle.Render("      ⌛Timer     ")
+	content := lipgloss.JoinVertical(lipgloss.Left, time)
 
-	content := lipgloss.JoinVertical(lipgloss.Left, title)
+	box := styles.ContainerStyle.Render(content)
 
-	box := boxStyle.Render(content)
-
-	return lipgloss.JoinVertical(lipgloss.Center, box, footer)
+	return lipgloss.JoinVertical(lipgloss.Center, header, box, footer)
 }

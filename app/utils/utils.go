@@ -1,4 +1,4 @@
-package app
+package utils
 
 import (
 	"fmt"
@@ -55,14 +55,14 @@ func SpaceBetween(width int, items ...string) []string {
 	return parts
 }
 
-func formatStopwatch(d time.Duration) string {
+func FormatStopwatch(d time.Duration) string {
 	h := int(d.Hours())
 	m := int(d.Minutes()) % 60
 	s := int(d.Seconds()) % 60
 	ms := int(d.Milliseconds()/10) % 100 // hundredths of a second
 
 	if h > 0 {
-		return fmt.Sprintf("%02d:%02d:%02d.%02d", h, m, s, ms)
+		return fmt.Sprintf("%02d:%02d:%02d:%02d", h, m, s, ms)
 	}
-	return fmt.Sprintf("%02d:%02d.%02d", m, s, ms)
+	return fmt.Sprintf("%02d:%02d:%02d", m, s, ms)
 }

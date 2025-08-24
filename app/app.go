@@ -89,41 +89,18 @@ func (a App) View() string {
 		return ""
 	}
 
-	tabColors := [2]string{"240", "240"}
 	view := ""
 	switch a.state {
 	case timer:
-		tabColors[0] = "63"
 		view = a.timerModel.View()
 	case stopWatch:
-		tabColors[1] = "63"
 		view = a.stopWatchModel.View()
 	}
-
-	header := ""
-
-	color1 := lipgloss.Color(tabColors[0])
-	tabTimer := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(color1).
-		Border(lipgloss.RoundedBorder(), false, false, true).
-		BorderForeground(color1).
-		MarginBottom(0)
-
-	color2 := lipgloss.Color(tabColors[1])
-	tabStopWatch := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(color2).
-		Border(lipgloss.RoundedBorder(), false, false, true).
-		BorderForeground(color2).
-		MarginBottom(0)
-
-	header += lipgloss.JoinHorizontal(lipgloss.Center, tabTimer.Render("     ⌛Timer     "), "   ", tabStopWatch.Render("  ⏱  Stop Watch   "))
 
 	return lipgloss.Place(
 		a.width,
 		a.height,
 		lipgloss.Center, lipgloss.Center,
-		lipgloss.JoinVertical(lipgloss.Center, header, view),
+		view,
 	)
 }
