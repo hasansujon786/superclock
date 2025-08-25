@@ -1,4 +1,4 @@
-module github.com/hasan/clock-tui
+module github.com/hasan/superclock
 
 go 1.24.3
 

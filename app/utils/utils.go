@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -65,4 +66,11 @@ func FormatStopwatch(d time.Duration) string {
 		return fmt.Sprintf("%02d:%02d:%02d:%02d", h, m, s, ms)
 	}
 	return fmt.Sprintf("%02d:%02d:%02d", m, s, ms)
+}
+
+func NotifyAppMounted() {
+	content := []byte("App Started!\n")
+	if err := os.WriteFile(".temp", content, 0644); err != nil {
+		panic(err)
+	}
 }

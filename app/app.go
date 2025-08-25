@@ -3,6 +3,7 @@ package app
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hasan/superclock/app/utils"
 )
 
 type state int
@@ -51,6 +52,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		a.timerModel.height = msg.Height
 		a.timerModel.width = msg.Width
+		utils.NotifyAppMounted()
 		return a, nil
 
 	case tea.KeyMsg:

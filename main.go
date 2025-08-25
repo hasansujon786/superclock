@@ -5,7 +5,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hasan/clock-tui/app"
+	"github.com/hasan/superclock/app"
 )
 
 func main() {

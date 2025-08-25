@@ -2,7 +2,7 @@ package components
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hasan/clock-tui/app/utils"
+	"github.com/hasan/superclock/app/utils"
 )
 
 type Digits map[rune][]string

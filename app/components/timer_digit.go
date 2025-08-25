@@ -2,7 +2,7 @@ package components
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hasan/clock-tui/app/styles"
+	"github.com/hasan/superclock/app/styles"
 )
 
 func TimerDigit(digits string, width int, fontName FontName) string {

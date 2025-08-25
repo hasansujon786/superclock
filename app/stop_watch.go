@@ -7,9 +7,9 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hasan/clock-tui/app/components"
-	"github.com/hasan/clock-tui/app/styles"
-	"github.com/hasan/clock-tui/app/utils"
+	"github.com/hasan/superclock/app/components"
+	"github.com/hasan/superclock/app/styles"
+	"github.com/hasan/superclock/app/utils"
 )
 
 type StopWatchModel struct {

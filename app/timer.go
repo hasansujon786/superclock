@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hasan/clock-tui/app/styles"
+	"github.com/hasan/superclock/app/styles"
 )
 
 // --- Timer model ---
