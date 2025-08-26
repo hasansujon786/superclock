@@ -6,17 +6,17 @@ import (
 	"github.com/hasan/superclock/app/utils"
 )
 
-type state int
+type AppView int
 
 const (
-	timer state = iota
-	stopWatch
+	timerClockView AppView = iota
+	stopWatchView
 )
 
 type App struct {
-	state          state
+	view          AppView
 	quitting       bool
-	timerModel     TimerModel
+	timerModel     TimerClockModel
 	stopWatchModel StopWatchModel
 
 	width, height int
@@ -24,18 +24,18 @@ type App struct {
 
 func NewApp() App {
 	return App{
-		state:          stopWatch, // start on timer screen
-		timerModel:     TimerModel{value: 0},
+		view:          timerClockView, // start on timer screen
+		timerModel:     CreateTimerClockModel(),
 		stopWatchModel: DefaultStopWatchModel(),
 	}
 }
 
 func (a App) Init() tea.Cmd {
 	// Delegate to the current submodel
-	switch a.state {
-	case timer:
+	switch a.view {
+	case timerClockView:
 		return a.timerModel.Init()
-	case stopWatch:
+	case stopWatchView:
 		return a.stopWatchModel.Init()
 	}
 	return nil
@@ -59,10 +59,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 
 		case "tab": // Toggle between views
-			if a.state == timer {
-				a.state = stopWatch
+			if a.view == timerClockView {
+				a.view = stopWatchView
 			} else {
-				a.state = timer
+				a.view = timerClockView
 			}
 
 		case "q", "ctrl+c": // Exit app
@@ -72,13 +72,13 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Delegate to current submodel
-	switch a.state {
-	case timer:
+	switch a.view {
+	case timerClockView:
 		newModel, cmd := a.timerModel.Update(msg)
-		a.timerModel = newModel.(TimerModel)
+		a.timerModel = newModel.(TimerClockModel)
 		return a, cmd
 
-	case stopWatch:
+	case stopWatchView:
 		newModel, cmd := a.stopWatchModel.Update(msg)
 		a.stopWatchModel = newModel.(StopWatchModel)
 		return a, cmd
@@ -92,10 +92,10 @@ func (a App) View() string {
 	}
 
 	view := ""
-	switch a.state {
-	case timer:
+	switch a.view {
+	case timerClockView:
 		view = a.timerModel.View()
-	case stopWatch:
+	case stopWatchView:
 		view = a.stopWatchModel.View()
 	}
 
