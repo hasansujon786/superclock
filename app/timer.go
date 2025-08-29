@@ -1,94 +1,207 @@
 package app
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hasan/superclock/app/components"
 	"github.com/hasan/superclock/app/styles"
+	"github.com/hasan/superclock/app/utils"
 )
 
-// --- Timer model ---
 type TimerClockModel struct {
-	value  int
-	timer  timer.Model
-	picker components.TimeWheelModel
-
+	timer         timer.Model
+	paused        bool
+	picker        components.TimeWheelModel
 	width, height int
 }
 
 func CreateTimerClockModel() TimerClockModel {
 	return TimerClockModel{
-		picker: components.CreateTimeWheelModel(),
+		timer:  timer.NewWithInterval(0, time.Millisecond),
+		picker: components.CreateTimeWheelModel(components.CursorPosSecond),
 	}
 }
 
 func (m TimerClockModel) Init() tea.Cmd {
+	// return m.timer.Init()
 	return nil
 }
 
+type clockState struct {
+	running bool
+	paused  bool
+}
+
+var (
+	clockStoped  = clockState{running: false, paused: false}
+	clockRunning = clockState{running: true, paused: false}
+	clockPaused  = clockState{running: false, paused: true}
+)
+
 func (m TimerClockModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	switch msg := msg.(type) {
+	case timer.TickMsg:
+		var cmd tea.Cmd
+		m.timer, cmd = m.timer.Update(msg)
+		return m, cmd
+
+	case timer.StartStopMsg:
+		var cmd tea.Cmd
+		m.timer, cmd = m.timer.Update(msg)
+		return m, cmd
+
+	case timer.TimeoutMsg:
+		m.paused = false
+		m.picker.FocusLast()
+		return m, nil
+
 	case tea.KeyMsg:
-		switch m.picker.Position {
-
-		// -----------------------
-		// CASE: Nothing selected
-		// -----------------------
-		case components.CursorPosNone:
+		switch (clockState{m.timer.Running(), m.paused}) {
+		// Clock is running or the clock is paused
+		case clockRunning, clockPaused:
 			switch msg.String() {
-			case "i":
-				m.picker.Focus(components.CursorPosSecond) // enter input mode
-			}
-			return m, nil
 
-		// -----------------------
-		// CASE: Inside picker
-		// -----------------------
-		default:
-			switch msg.String() {
-			case "h":
-				m.picker.PickerMoveCursorLeft()
-			case "l":
-				m.picker.PickerMoveCursorRight()
-			case "k":
-				m.picker.IncreaseValue()
-			case "j":
-				m.picker.DecreaseValue()
+			// Reset current timer
 			case "r":
-				m.picker.Reset()
-			case "x":
-				m.picker.ResetCurrent()
-			case "esc":
-				m.picker.Blur() // exit input mode
-			case "enter":
-				m.picker.Blur() // exit input mode
+				m.timer.Timeout = m.picker.Value.ToDuration()
+				return m, nil
+
+				// FIXME: fix layout jumps while pausing
+				// Pause and Start timer
+			case " ":
+				m.paused = !m.paused
+				if m.paused {
+					return m, m.timer.Stop()
+				}
+				return m, m.timer.Start()
+
+				// Stop timer & focus input
+			case "s", "i", "esc":
+				m.paused = false
+				m.picker.FocusLast()
+				return m, m.timer.Stop()
 			}
-			return m, nil
+
+		// CASE: Inside picker
+		default:
+			var cmd tea.Cmd
+			m, cmd = m.pickerKeymaps(msg)
+			return m, cmd
 		}
+
+		return m, nil
 	}
+
 	return m, nil
 }
 
 func (m TimerClockModel) View() string {
-	contentWidth := styles.ContainerStyle.GetWidth() - 2
+	cWidth := styles.ContainerStyle.GetWidth()
+	cHeight := styles.ContainerStyle.GetHeight()
 
-	time := components.TimerWhell(m.picker.Value, m.picker.Position)
-	footer := styles.FooterStyle.Render("↑/↓ to change count • q to quit")
+	clkState := clockState{m.timer.Running(), m.paused}
+	isPaused := clkState == clockPaused
+	isRunning := clkState == clockRunning
 
-	header := styles.HeaderStyle.Render("      ⌛Timer     ")
+	playBtn := components.ButtonStyles.Render("   ")
+	escBtn := components.ButtonStyles.Render("   ")
+	playPauseBtn := components.ButtonStyles.Render(utils.If(isPaused, "   ", "   "))
 
 	timerContainer := lipgloss.NewStyle().
-		Width(contentWidth).
-		Height(1).
-		MarginTop(1).
 		Border(lipgloss.RoundedBorder()).
-		Align(lipgloss.Center)
+		Padding(0, 5)
 
-	content := timerContainer.Render(time)
+	content := ""
 
-	box := styles.ContainerStyle.Render(content)
+	if isRunning || isPaused {
+		timeDigit := components.TimerDigit(utils.FormatTimerFromSeconds(m.timer.Timeout), cWidth, components.NerdFont)
+		totalTime := utils.FormatTimerFromSeconds(m.picker.Value.ToDuration())
 
-	return lipgloss.JoinVertical(lipgloss.Center, header, box, footer)
+		content = lipgloss.JoinVertical(
+			lipgloss.Center,
+			timeDigit,
+			"",
+			totalTime,
+			"",
+			"",
+			lipgloss.JoinHorizontal(
+				lipgloss.Center,
+				playPauseBtn,
+				"  ",
+				escBtn,
+			),
+			"",
+		)
+	} else {
+		pickerTime := components.TimerWhell(m.picker.Value, m.picker.Position)
+		content = lipgloss.JoinVertical(
+			lipgloss.Center,
+			"󰀠 Select time ",
+			timerContainer.Render(pickerTime),
+			"",
+			playBtn,
+		)
+	}
+
+	header := styles.HeaderStyle.Render("      ⌛Timer     ")
+	viewBox := styles.ContainerStyle.Render(
+		lipgloss.Place(cWidth, cHeight, lipgloss.Center, lipgloss.Center, content),
+	)
+	footer := buildFooter(clockStoped != clkState, isPaused)
+
+	return lipgloss.JoinVertical(lipgloss.Center, header, viewBox, footer)
+}
+
+func (m TimerClockModel) pickerKeymaps(msg tea.Msg) (TimerClockModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "i":
+			m.picker.FocusLast()
+		case "h":
+			m.picker.PickerMoveCursorLeft()
+		case "l":
+			m.picker.PickerMoveCursorRight()
+		case "k":
+			m.picker.IncreaseValue()
+		case "j":
+			m.picker.DecreaseValue()
+		case "r":
+			m.picker.Reset()
+		case "x":
+			m.picker.ResetCurrent()
+		case "esc":
+			m.picker.Blur()
+		case " ", "s", "enter":
+			m.timer.Timeout = m.picker.Value.ToDuration()
+			return m, m.timer.Start()
+		}
+		return m, nil
+	}
+
+	return m, nil
+}
+
+func buildFooter(isRunning, isPaused bool) string {
+	footerMsg := "    "
+
+	if isRunning && !isPaused {
+		footerMsg += "space: pause"
+	} else {
+		footerMsg += "space: play "
+	}
+
+	if isRunning {
+		footerMsg += " • s: stop "
+	} else {
+		footerMsg += " • s: start"
+	}
+	footerMsg += " • r: reset\n"
+
+	footerMsg += "k/j: increase/decrease • h/l: change focus\n"
+
+	return styles.FooterStyle.Render(footerMsg)
 }

@@ -2,6 +2,7 @@ package components
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hasan/superclock/app/styles"
@@ -22,14 +23,21 @@ type PickerValue struct {
 	seconsd int
 }
 
+// ToDuration converts PickerValue to time.Duration
+func (p PickerValue) ToDuration() time.Duration {
+	return time.Duration(p.hour)*time.Hour +
+		time.Duration(p.minute)*time.Minute +
+		time.Duration(p.seconsd)*time.Second
+}
+
 type TimeWheelModel struct {
 	Position CursorPositon
 	Value    PickerValue
 }
 
-func CreateTimeWheelModel() TimeWheelModel {
+func CreateTimeWheelModel(focus CursorPositon) TimeWheelModel {
 	return TimeWheelModel{
-		Position: CursorPosNone,
+		Position: focus,
 		Value:    PickerValue{hour: 0, minute: 0, seconsd: 0},
 	}
 }
@@ -104,6 +112,14 @@ func (tp *TimeWheelModel) DecreaseValue() {
 
 func (tp *TimeWheelModel) Focus(pos CursorPositon) {
 	tp.Position = pos
+}
+
+func (tp *TimeWheelModel) FocusLast() {
+	if tp.Position == CursorPosNone {
+		tp.Focus(CursorPosSecond)
+	} else {
+		tp.Focus(tp.Position)
+	}
 }
 
 func (tp *TimeWheelModel) Blur() {

@@ -68,6 +68,14 @@ func FormatStopwatch(d time.Duration) string {
 	return fmt.Sprintf("%02d:%02d:%02d", m, s, ms)
 }
 
+func FormatTimerFromSeconds(d time.Duration) string {
+	h := int(d.Hours())
+	m := int(d.Minutes()) % 60
+	s := int(d.Seconds()) % 60
+
+	return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
+}
+
 func NotifyAppMounted() {
 	content := []byte("App Started!\n")
 	if err := os.WriteFile(".temp", content, 0644); err != nil {
