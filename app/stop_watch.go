@@ -8,12 +8,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hasan/superclock/app/components"
+	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/styles"
 	"github.com/hasan/superclock/app/utils"
 )
 
 type StopWatchModel struct {
 	stopwatch     stopwatch.Model
+	paused        bool
 	laps          []lap
 	width, height int
 }
@@ -30,6 +32,27 @@ func (m StopWatchModel) Init() tea.Cmd {
 
 func (m StopWatchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case stopwatch.TickMsg:
+		var cmd tea.Cmd
+		m.stopwatch, cmd = m.stopwatch.Update(msg)
+		return m, cmd
+
+	case stopwatch.StartStopMsg:
+		var cmd tea.Cmd
+		m.stopwatch, cmd = m.stopwatch.Update(msg)
+		if !m.stopwatch.Running() && !utils.DurationEnded(m.stopwatch.Elapsed()) {
+			m.paused = true
+		} else if m.paused {
+			m.paused = false
+		}
+		return m, cmd
+
+	case stopwatch.ResetMsg:
+		var cmd tea.Cmd
+		m.stopwatch, cmd = m.stopwatch.Update(msg)
+		m.paused = false
+		return m, cmd
+
 	case tea.KeyMsg:
 		switch msg.String() {
 
@@ -43,46 +66,59 @@ func (m StopWatchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "r":
 			m.laps = []lap{}
-			return m, m.stopwatch.Reset()
+			return m, tea.Batch(m.stopwatch.Stop(), m.stopwatch.Reset())
 		case "s":
 			return m, m.stopwatch.Toggle()
 		}
 	}
 
-	var cmd tea.Cmd
-	m.stopwatch, cmd = m.stopwatch.Update(msg)
-	return m, cmd
+	return m, nil
 }
 
 // ------------------ View Function ----------------
 
 func (m StopWatchModel) View() string {
-	contentWidth := styles.ContainerStyle.GetWidth() - 2
-	timeDigit := components.TimerDigit(utils.FormatStopwatch(m.stopwatch.Elapsed()), contentWidth, components.NerdFont)
+	cWidth := styles.ContainerStyle.GetWidth()
+	cHeight := styles.ContainerStyle.GetHeight()
 
-	laps := []string{}
-	for _, lap := range m.laps {
-		laps = append(laps, buildLapItem(lap))
-	}
-	lapList := lipgloss.JoinVertical(lipgloss.Center, laps...)
+	clkState := constants.ClockState{Running: m.stopwatch.Running(), Paused: m.paused}
+
+	timeDigit := components.TimerDigit(
+		utils.FormatStopwatch(m.stopwatch.Elapsed()),
+		cWidth,
+		components.NerdFont,
+	)
+
+	ctlBox := buildControlBox(&clkState)
 
 	header := styles.HeaderStyle.Render("  ⏱  Stop Watch   ")
-	content := lipgloss.JoinVertical(lipgloss.Center, timeDigit, " ", lapList)
-	box := styles.ContainerStyle.Render(content)
+	content := lipgloss.JoinVertical(
+		lipgloss.Center,
+		timeDigit,
+		" ",
+		buildLapItemList(m.laps),
+		" ",
+		ctlBox,
+	)
+
+	viewBox := styles.ContainerStyle.Render(
+		lipgloss.Place(cWidth, cHeight, lipgloss.Center, lipgloss.Center, content),
+	)
+
 	help := buildHelp(m.stopwatch.Running())
 
-	return lipgloss.JoinVertical(lipgloss.Center, header, box, help)
+	return lipgloss.JoinVertical(lipgloss.Center, header, viewBox, help)
 }
 
 func buildHelp(running bool) string {
 
 	s := utils.If(running, "s: stop ", "s: start")
-	s += " • r: reset • space: lap • q: quit"
+	s += " • r: reset\nspace: lap • q: quit"
 
 	return styles.FooterStyle.Render(s)
 }
 
-// ------------------ Lap Function -------------------
+// ------------------ Lap Functions -------------------
 
 type lap struct {
 	time  time.Duration
@@ -103,6 +139,29 @@ func buildLapItem(item lap) string {
 			utils.FormatStopwatch(item.time),
 		)...,
 	)
+}
+
+func buildLapItemList(laps []lap) string {
+	if len(laps) == 0 {
+		return ""
+	}
+
+	lapsComp := []string{}
+	for _, lap := range laps {
+		lapsComp = append(lapsComp, buildLapItem(lap))
+	}
+	return lipgloss.JoinVertical(lipgloss.Center, lapsComp...)
+}
+
+func buildControlBox(clState *constants.ClockState) string {
+	playPauseBtn := components.ButtonStyles.Render(utils.If(clState.IsRunning(), "   ", "   "))
+
+	if clState.IsStopped() {
+		return playPauseBtn
+	}
+
+	lapStopBtn := components.ButtonStyles.Render(utils.If(clState.IsPaused(), "   ", "   "))
+	return lipgloss.JoinHorizontal(lipgloss.Center, playPauseBtn, "  ", lapStopBtn)
 }
 
 func createNewLap(lapTime time.Duration, laps []lap) lap {

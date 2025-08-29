@@ -56,6 +56,11 @@ func SpaceBetween(width int, items ...string) []string {
 	return parts
 }
 
+var zeroDuration time.Duration = 0
+func DurationEnded(d time.Duration) bool {
+	return d == zeroDuration
+}
+
 func FormatStopwatch(d time.Duration) string {
 	h := int(d.Hours())
 	m := int(d.Minutes()) % 60

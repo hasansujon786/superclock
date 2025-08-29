@@ -22,7 +22,7 @@ func main() {
 	logger.Init()
 	defer logger.Close()
 
-	app := app.NewApp()
+	app := app.NewApp(app.AppViewStopWatch)
 	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Printf("App run failed: %v", err)

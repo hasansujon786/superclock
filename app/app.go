@@ -9,12 +9,12 @@ import (
 type AppView int
 
 const (
-	timerClockView AppView = iota
-	stopWatchView
+	AppViewTimer AppView = iota
+	AppViewStopWatch
 )
 
 type App struct {
-	view          AppView
+	view           AppView
 	quitting       bool
 	timerModel     TimerClockModel
 	stopWatchModel StopWatchModel
@@ -22,9 +22,8 @@ type App struct {
 	width, height int
 }
 
-func NewApp() App {
+func NewApp(view AppView) App {
 	return App{
-		view:          timerClockView, // start on timer screen
 		timerModel:     CreateTimerClockModel(),
 		stopWatchModel: DefaultStopWatchModel(),
 	}
@@ -33,9 +32,9 @@ func NewApp() App {
 func (a App) Init() tea.Cmd {
 	// Delegate to the current submodel
 	switch a.view {
-	case timerClockView:
+	case AppViewTimer:
 		return a.timerModel.Init()
-	case stopWatchView:
+	case AppViewStopWatch:
 		return a.stopWatchModel.Init()
 	}
 	return nil
@@ -59,10 +58,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 
 		case "tab": // Toggle between views
-			if a.view == timerClockView {
-				a.view = stopWatchView
+			if a.view == AppViewStopWatch {
+				a.view = AppViewTimer
 			} else {
-				a.view = timerClockView
+				a.view = AppViewStopWatch
 			}
 
 		case "q", "ctrl+c": // Exit app
@@ -73,12 +72,12 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Delegate to current submodel
 	switch a.view {
-	case timerClockView:
+	case AppViewTimer:
 		newModel, cmd := a.timerModel.Update(msg)
 		a.timerModel = newModel.(TimerClockModel)
 		return a, cmd
 
-	case stopWatchView:
+	case AppViewStopWatch:
 		newModel, cmd := a.stopWatchModel.Update(msg)
 		a.stopWatchModel = newModel.(StopWatchModel)
 		return a, cmd
@@ -93,9 +92,9 @@ func (a App) View() string {
 
 	view := ""
 	switch a.view {
-	case timerClockView:
+	case AppViewTimer:
 		view = a.timerModel.View()
-	case stopWatchView:
+	case AppViewStopWatch:
 		view = a.stopWatchModel.View()
 	}
 

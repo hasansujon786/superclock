@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hasan/superclock/app/components"
+	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/styles"
 	"github.com/hasan/superclock/app/utils"
 )
@@ -30,17 +31,6 @@ func (m TimerClockModel) Init() tea.Cmd {
 	return nil
 }
 
-type clockState struct {
-	running bool
-	paused  bool
-}
-
-var (
-	clockStoped  = clockState{running: false, paused: false}
-	clockRunning = clockState{running: true, paused: false}
-	clockPaused  = clockState{running: false, paused: true}
-)
-
 func (m TimerClockModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case timer.TickMsg:
@@ -59,9 +49,9 @@ func (m TimerClockModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		switch (clockState{m.timer.Running(), m.paused}) {
+		switch (constants.ClockState{Running: m.timer.Running(), Paused: m.paused}) {
 		// Clock is running or the clock is paused
-		case clockRunning, clockPaused:
+		case constants.ClockStateRunning, constants.ClockStatePaused:
 			switch msg.String() {
 
 			// Reset current timer
@@ -84,15 +74,13 @@ func (m TimerClockModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.picker.FocusLast()
 				return m, m.timer.Stop()
 			}
-
+			
 		// CASE: Inside picker
 		default:
 			var cmd tea.Cmd
 			m, cmd = m.pickerKeymaps(msg)
 			return m, cmd
 		}
-
-		return m, nil
 	}
 
 	return m, nil
@@ -102,9 +90,9 @@ func (m TimerClockModel) View() string {
 	cWidth := styles.ContainerStyle.GetWidth()
 	cHeight := styles.ContainerStyle.GetHeight()
 
-	clkState := clockState{m.timer.Running(), m.paused}
-	isPaused := clkState == clockPaused
-	isRunning := clkState == clockRunning
+	clkState := constants.ClockState{Running: m.timer.Running(), Paused: m.paused}
+	isPaused := clkState.IsPaused()
+	isRunning := clkState.IsRunning()
 
 	playBtn := components.ButtonStyles.Render("   ")
 	escBtn := components.ButtonStyles.Render("   ")
@@ -150,8 +138,8 @@ func (m TimerClockModel) View() string {
 	viewBox := styles.ContainerStyle.Render(
 		lipgloss.Place(cWidth, cHeight, lipgloss.Center, lipgloss.Center, content),
 	)
-	footer := buildFooter(clockStoped != clkState, isPaused)
 
+	footer := buildFooter(isRunning, isPaused)
 	return lipgloss.JoinVertical(lipgloss.Center, header, viewBox, footer)
 }
 
