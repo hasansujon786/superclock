@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hasan/superclock/app/components"
+	"github.com/hasan/superclock/app/ui"
 	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/styles"
 	"github.com/hasan/superclock/app/utils"
@@ -83,10 +83,10 @@ func (m StopWatchModel) View() string {
 
 	clkState := constants.ClockState{Running: m.stopwatch.Running(), Paused: m.paused}
 
-	timeDigit := components.TimerDigit(
+	timeDigit := ui.TimerDigit(
 		utils.FormatStopwatch(m.stopwatch.Elapsed()),
 		cWidth,
-		components.NerdFont,
+		ui.NerdFont,
 	)
 
 	ctlBox := buildControlBox(&clkState)
@@ -154,13 +154,13 @@ func buildLapItemList(laps []lap) string {
 }
 
 func buildControlBox(clState *constants.ClockState) string {
-	playPauseBtn := components.ButtonStyles.Render(utils.If(clState.IsRunning(), "   ", "   "))
+	playPauseBtn := ui.ButtonStyles.Render(utils.If(clState.IsRunning(), "   ", "   "))
 
 	if clState.IsStopped() {
 		return playPauseBtn
 	}
 
-	lapStopBtn := components.ButtonStyles.Render(utils.If(clState.IsPaused(), "   ", "   "))
+	lapStopBtn := ui.ButtonStyles.Render(utils.If(clState.IsPaused(), "   ", "   "))
 	return lipgloss.JoinHorizontal(lipgloss.Center, playPauseBtn, "  ", lapStopBtn)
 }
 

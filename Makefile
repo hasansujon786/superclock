@@ -11,10 +11,10 @@ all: build
 .PHONY: build
 build:
 	@echo "Building $(BINARY)..."
-	go build -o $(BINARY) main.go
+	go build -o $(BINARY) "cmd/$(BINARY)/main.go"
 
 # Run the app
 .PHONY: run
 run:
 	@echo "Running $(BINARY)..."
-	go run main.go
+	go run "cmd/$(BINARY)/main.go"

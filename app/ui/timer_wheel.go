@@ -1,4 +1,4 @@
-package components
+package ui
 
 import (
 	"fmt"
@@ -17,45 +17,32 @@ const (
 	CursorPosNone
 )
 
-type PickerValue struct {
-	hour    int
-	minute  int
-	seconsd int
-}
-
-// ToDuration converts PickerValue to time.Duration
-func (p PickerValue) ToDuration() time.Duration {
-	return time.Duration(p.hour)*time.Hour +
-		time.Duration(p.minute)*time.Minute +
-		time.Duration(p.seconsd)*time.Second
-}
-
-type TimeWheelModel struct {
+type TimerWheelModel struct {
 	Position CursorPositon
 	Value    PickerValue
 }
 
-func CreateTimeWheelModel(focus CursorPositon) TimeWheelModel {
-	return TimeWheelModel{
+func NewTimerWheelModel(focus CursorPositon) TimerWheelModel {
+	return TimerWheelModel{
 		Position: focus,
 		Value:    PickerValue{hour: 0, minute: 0, seconsd: 0},
 	}
 }
 
-func (tp *TimeWheelModel) PickerMoveCursorLeft() {
+func (tp *TimerWheelModel) PickerMoveCursorLeft() {
 	if tp.Position == CursorPosNone {
 		return
 	}
 	tp.Position = (tp.Position - 1 + CursorPosNone) % CursorPosNone
 }
-func (tp *TimeWheelModel) PickerMoveCursorRight() {
+func (tp *TimerWheelModel) PickerMoveCursorRight() {
 	if tp.Position == CursorPosNone {
 		return
 	}
 	tp.Position = (tp.Position + 1) % CursorPosNone
 }
 
-func (tp *TimeWheelModel) IncreaseValue() {
+func (tp *TimerWheelModel) IncreaseValue() {
 	if tp.Position == CursorPosNone {
 		return
 	}
@@ -81,8 +68,7 @@ func (tp *TimeWheelModel) IncreaseValue() {
 		}
 	}
 }
-
-func (tp *TimeWheelModel) DecreaseValue() {
+func (tp *TimerWheelModel) DecreaseValue() {
 	if tp.Position == CursorPosNone {
 		return
 	}
@@ -110,26 +96,24 @@ func (tp *TimeWheelModel) DecreaseValue() {
 	}
 }
 
-func (tp *TimeWheelModel) Focus(pos CursorPositon) {
+func (tp *TimerWheelModel) Focus(pos CursorPositon) {
 	tp.Position = pos
 }
-
-func (tp *TimeWheelModel) FocusLast() {
+func (tp *TimerWheelModel) FocusLast() {
 	if tp.Position == CursorPosNone {
 		tp.Focus(CursorPosSecond)
 	} else {
 		tp.Focus(tp.Position)
 	}
 }
-
-func (tp *TimeWheelModel) Blur() {
+func (tp *TimerWheelModel) Blur() {
 	tp.Position = CursorPosNone
 }
 
-func (tp *TimeWheelModel) Reset() {
+func (tp *TimerWheelModel) Reset() {
 	tp.Value = PickerValue{hour: 0, minute: 0, seconsd: 0}
 }
-func (tp *TimeWheelModel) ResetCurrent() {
+func (tp *TimerWheelModel) ResetCurrent() {
 	if tp.Position == CursorPosNone {
 		return
 	}
@@ -144,6 +128,25 @@ func (tp *TimeWheelModel) ResetCurrent() {
 	}
 }
 
+// ------------------------------------------------
+// -- PickerValue ---------------------------------
+// ------------------------------------------------
+type PickerValue struct {
+	hour    int
+	minute  int
+	seconsd int
+}
+
+// ToDuration converts PickerValue to time.Duration
+func (p PickerValue) ToDuration() time.Duration {
+	return time.Duration(p.hour)*time.Hour +
+		time.Duration(p.minute)*time.Minute +
+		time.Duration(p.seconsd)*time.Second
+}
+
+// ------------------------------------------------
+// -- TimerWhell components -----------------------
+// ------------------------------------------------
 func TimerWhell(timer PickerValue, cursor CursorPositon) string {
 	Unfocused := lipgloss.NewStyle().
 		Foreground(styles.ThemeColors.Primary)

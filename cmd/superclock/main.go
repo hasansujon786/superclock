@@ -6,7 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hasan/superclock/app"
-	"github.com/hasan/superclock/logger"
+	"github.com/hasan/superclock/pkg/logger"
 	"github.com/joho/godotenv"
 )
 

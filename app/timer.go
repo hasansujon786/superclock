@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hasan/superclock/app/components"
+	"github.com/hasan/superclock/app/ui"
 	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/styles"
 	"github.com/hasan/superclock/app/utils"
@@ -15,14 +15,14 @@ import (
 type TimerClockModel struct {
 	timer         timer.Model
 	paused        bool
-	picker        components.TimeWheelModel
+	picker        ui.TimerWheelModel
 	width, height int
 }
 
-func CreateTimerClockModel() TimerClockModel {
+func NewTimerClockModel() TimerClockModel {
 	return TimerClockModel{
 		timer:  timer.NewWithInterval(0, time.Millisecond),
-		picker: components.CreateTimeWheelModel(components.CursorPosSecond),
+		picker: ui.NewTimerWheelModel(ui.CursorPosSecond),
 	}
 }
 
@@ -94,9 +94,9 @@ func (m TimerClockModel) View() string {
 	isPaused := clkState.IsPaused()
 	isRunning := clkState.IsRunning()
 
-	playBtn := components.ButtonStyles.Render("   ")
-	escBtn := components.ButtonStyles.Render("   ")
-	playPauseBtn := components.ButtonStyles.Render(utils.If(isPaused, "   ", "   "))
+	playBtn := ui.ButtonStyles.Render("   ")
+	escBtn := ui.ButtonStyles.Render("   ")
+	playPauseBtn := ui.ButtonStyles.Render(utils.If(isPaused, "   ", "   "))
 
 	timerContainer := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -105,7 +105,7 @@ func (m TimerClockModel) View() string {
 	content := ""
 
 	if isRunning || isPaused {
-		timeDigit := components.TimerDigit(utils.FormatTimerFromSeconds(m.timer.Timeout), cWidth, components.NerdFont)
+		timeDigit := ui.TimerDigit(utils.FormatTimerFromSeconds(m.timer.Timeout), cWidth, ui.NerdFont)
 		totalTime := utils.FormatTimerFromSeconds(m.picker.Value.ToDuration())
 
 		content = lipgloss.JoinVertical(
@@ -124,7 +124,7 @@ func (m TimerClockModel) View() string {
 			"",
 		)
 	} else {
-		pickerTime := components.TimerWhell(m.picker.Value, m.picker.Position)
+		pickerTime := ui.TimerWhell(m.picker.Value, m.picker.Position)
 		content = lipgloss.JoinVertical(
 			lipgloss.Center,
 			"󰀠 Select time ",
