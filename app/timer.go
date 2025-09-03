@@ -105,8 +105,8 @@ func (m TimerClockModel) View() string {
 	content := ""
 
 	if isRunning || isPaused {
-		timeDigit := ui.TimerDigit(utils.FormatTimerFromSeconds(m.timer.Timeout), cWidth, ui.NerdFont)
-		totalTime := utils.FormatTimerFromSeconds(m.picker.Value.ToDuration())
+		timeDigit := ui.TimerDigit(utils.FormatDuration(m.timer.Timeout), cWidth, ui.NerdFont)
+		totalTime := utils.FormatDuration(m.picker.Value.ToDuration())
 
 		content = lipgloss.JoinVertical(
 			lipgloss.Center,

@@ -2,9 +2,9 @@ package ui
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hasan/superclock/app/models"
 	"github.com/hasan/superclock/app/styles"
 )
 
@@ -18,14 +18,16 @@ const (
 )
 
 type TimerWheelModel struct {
-	Position CursorPositon
-	Value    PickerValue
+	Position     CursorPositon
+	LastPosition CursorPositon
+	Value        models.PickerValue
 }
 
 func NewTimerWheelModel(focus CursorPositon) TimerWheelModel {
 	return TimerWheelModel{
-		Position: focus,
-		Value:    PickerValue{hour: 0, minute: 0, seconsd: 0},
+		Position:     focus,
+		LastPosition: focus,
+		Value:        models.PickerValue{Hour: 0, Minute: 0, Second: 0},
 	}
 }
 
@@ -49,22 +51,22 @@ func (tp *TimerWheelModel) IncreaseValue() {
 
 	switch tp.Position {
 	case CursorPosHour:
-		if tp.Value.hour == 23 {
-			tp.Value.hour = 0
+		if tp.Value.Hour == 23 {
+			tp.Value.Hour = 0
 		} else {
-			tp.Value.hour++
+			tp.Value.Hour++
 		}
 	case CursorPosMinute:
-		if tp.Value.minute == 59 {
-			tp.Value.minute = 0
+		if tp.Value.Minute == 59 {
+			tp.Value.Minute = 0
 		} else {
-			tp.Value.minute++
+			tp.Value.Minute++
 		}
 	case CursorPosSecond:
-		if tp.Value.seconsd == 59 {
-			tp.Value.seconsd = 0
+		if tp.Value.Second == 59 {
+			tp.Value.Second = 0
 		} else {
-			tp.Value.seconsd++
+			tp.Value.Second++
 		}
 	}
 }
@@ -75,22 +77,22 @@ func (tp *TimerWheelModel) DecreaseValue() {
 
 	switch tp.Position {
 	case CursorPosHour:
-		if tp.Value.hour == 0 {
-			tp.Value.hour = 23
+		if tp.Value.Hour == 0 {
+			tp.Value.Hour = 23
 		} else {
-			tp.Value.hour--
+			tp.Value.Hour--
 		}
 	case CursorPosMinute:
-		if tp.Value.minute == 0 {
-			tp.Value.minute = 59
+		if tp.Value.Minute == 0 {
+			tp.Value.Minute = 59
 		} else {
-			tp.Value.minute--
+			tp.Value.Minute--
 		}
 	case CursorPosSecond:
-		if tp.Value.seconsd == 0 {
-			tp.Value.seconsd = 59
+		if tp.Value.Second == 0 {
+			tp.Value.Second = 59
 		} else {
-			tp.Value.seconsd--
+			tp.Value.Second--
 		}
 
 	}
@@ -100,18 +102,19 @@ func (tp *TimerWheelModel) Focus(pos CursorPositon) {
 	tp.Position = pos
 }
 func (tp *TimerWheelModel) FocusLast() {
-	if tp.Position == CursorPosNone {
+	if tp.LastPosition == CursorPosNone {
 		tp.Focus(CursorPosSecond)
 	} else {
-		tp.Focus(tp.Position)
+		tp.Focus(tp.LastPosition)
 	}
 }
 func (tp *TimerWheelModel) Blur() {
+	tp.LastPosition = tp.Position
 	tp.Position = CursorPosNone
 }
 
 func (tp *TimerWheelModel) Reset() {
-	tp.Value = PickerValue{hour: 0, minute: 0, seconsd: 0}
+	tp.Value = models.PickerValue{Hour: 0, Minute: 0, Second: 0}
 }
 func (tp *TimerWheelModel) ResetCurrent() {
 	if tp.Position == CursorPosNone {
@@ -120,35 +123,19 @@ func (tp *TimerWheelModel) ResetCurrent() {
 
 	switch tp.Position {
 	case CursorPosHour:
-		tp.Value.hour = 0
+		tp.Value.Hour = 0
 	case CursorPosMinute:
-		tp.Value.minute = 0
+		tp.Value.Minute = 0
 	case CursorPosSecond:
-		tp.Value.seconsd = 0
+		tp.Value.Second = 0
 	}
-}
-
-// ------------------------------------------------
-// -- PickerValue ---------------------------------
-// ------------------------------------------------
-type PickerValue struct {
-	hour    int
-	minute  int
-	seconsd int
-}
-
-// ToDuration converts PickerValue to time.Duration
-func (p PickerValue) ToDuration() time.Duration {
-	return time.Duration(p.hour)*time.Hour +
-		time.Duration(p.minute)*time.Minute +
-		time.Duration(p.seconsd)*time.Second
 }
 
 // ------------------------------------------------
 // -- TimerWhell components -----------------------
 // ------------------------------------------------
-func TimerWhell(timer PickerValue, cursor CursorPositon) string {
-	Unfocused := lipgloss.NewStyle().
+func TimerWhell(timer models.PickerValue, cursor CursorPositon) string {
+	unfocused := lipgloss.NewStyle().
 		Foreground(styles.ThemeColors.Primary)
 
 	focused := lipgloss.NewStyle().
@@ -156,18 +143,18 @@ func TimerWhell(timer PickerValue, cursor CursorPositon) string {
 		BorderForeground(styles.ThemeColors.Secondary).
 		Underline(true)
 
-	hourDigit := Unfocused.Render(fmt.Sprintf("%02d", timer.hour))
-	minuteDigit := Unfocused.Render(fmt.Sprintf("%02d", timer.minute))
-	secondDigit := Unfocused.Render(fmt.Sprintf("%02d", timer.seconsd))
-	separator := Unfocused.Render(":")
+	hourDigit := unfocused.Render(fmt.Sprintf("%02d", timer.Hour))
+	minuteDigit := unfocused.Render(fmt.Sprintf("%02d", timer.Minute))
+	secondDigit := unfocused.Render(fmt.Sprintf("%02d", timer.Second))
+	separator := unfocused.Render(":")
 
 	switch cursor {
 	case CursorPosHour:
-		hourDigit = focused.Render(fmt.Sprintf("%02d", timer.hour))
+		hourDigit = focused.Render(fmt.Sprintf("%02d", timer.Hour))
 	case CursorPosMinute:
-		minuteDigit = focused.Render(fmt.Sprintf("%02d", timer.minute))
+		minuteDigit = focused.Render(fmt.Sprintf("%02d", timer.Minute))
 	case CursorPosSecond:
-		secondDigit = focused.Render(fmt.Sprintf("%02d", timer.seconsd))
+		secondDigit = focused.Render(fmt.Sprintf("%02d", timer.Second))
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Center, hourDigit, separator, minuteDigit, separator, secondDigit)

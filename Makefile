@@ -11,10 +11,16 @@ all: build
 .PHONY: build
 build:
 	@echo "Building $(BINARY)..."
-	go build -o $(BINARY) "cmd/$(BINARY)/main.go"
+	# go build -o $(BINARY) "cmd/$(BINARY)/main.go"
+	go build -o bin/client ./cmd/client
+	go build -o bin/daemon ./cmd/daemon
 
 # Run the app
 .PHONY: run
 run:
 	@echo "Running $(BINARY)..."
-	go run "cmd/$(BINARY)/main.go"
+	go run cmd/daemon/main.go & \
+	DAEMON_PID=$$!; \
+	sleep 2; \
+	go run cmd/client/main.go; \
+	kill $$DAEMON_PID

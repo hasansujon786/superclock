@@ -1,0 +1,28 @@
+package cmd
+
+import (
+	"encoding/gob"
+	"log"
+
+	"github.com/hasan/superclock/app/features/timer"
+	"github.com/hasan/superclock/app/models"
+	"github.com/hasan/superclock/pkg/logger"
+	"github.com/joho/godotenv"
+)
+
+// Register types that will pass through connection
+func RegisterGob() {
+	gob.Register(models.PickerValue{})
+	gob.Register(timer.TimerState{})
+}
+
+func SetupDotEnv() func() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, continuing...")
+	}
+
+	// Initialize logger
+	logger.Init()
+	return logger.Close
+}

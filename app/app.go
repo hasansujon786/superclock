@@ -24,13 +24,13 @@ type App struct {
 
 func NewApp(view AppView) App {
 	return App{
-		timerModel:     CreateTimerClockModel(),
-		stopWatchModel: DefaultStopWatchModel(),
+		timerModel:     NewTimerClockModel(),
+		stopWatchModel: NewStopWatchModel(),
 	}
 }
 
 func (a App) Init() tea.Cmd {
-	// Delegate to the current submodel
+	// Delegate to the current sub-model
 	switch a.view {
 	case AppViewTimer:
 		return a.timerModel.Init()

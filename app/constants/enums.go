@@ -1,5 +1,8 @@
 package constants
 
+// ------------------------------------------------
+// -- Clock State ---------------------------------
+// ------------------------------------------------
 type ClockState struct {
 	Running bool
 	Paused  bool
@@ -19,4 +22,24 @@ func (state ClockState) IsStopped() bool {
 }
 func (state ClockState) IsPaused() bool {
 	return state == ClockStatePaused
+}
+
+// ------------------------------------------------
+// -- Daemon Actions ------------------------------
+// ------------------------------------------------
+type Command string
+
+const (
+	CmdGet      Command = "get"
+	CmdSetTimer Command = "set_timer"
+	CmdPlay     Command = "play"
+	CmdPause    Command = "pause"
+	CmdStop     Command = "stop"
+	CmdToggle   Command = "toggle"
+	CmdReset    Command = "reset"
+)
+
+type Request struct {
+	Cmd     Command
+	Payload any
 }

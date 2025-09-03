@@ -20,7 +20,7 @@ type StopWatchModel struct {
 	width, height int
 }
 
-func DefaultStopWatchModel() StopWatchModel {
+func NewStopWatchModel() StopWatchModel {
 	return StopWatchModel{
 		stopwatch: stopwatch.NewWithInterval(time.Millisecond),
 	}
