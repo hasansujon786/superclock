@@ -86,7 +86,7 @@ func (m StopWatchModel) View() string {
 	timeDigit := ui.TimerDigit(
 		utils.FormatStopwatch(m.stopwatch.Elapsed()),
 		cWidth,
-		ui.NerdFont,
+		constants.NerdFont,
 	)
 
 	ctlBox := buildControlBox(&clkState)

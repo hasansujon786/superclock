@@ -11,6 +11,8 @@ type AppView int
 const (
 	AppViewTimer AppView = iota
 	AppViewStopWatch
+	AppViewPomodoro
+	AppViewNone
 )
 
 type App struct {
@@ -18,14 +20,17 @@ type App struct {
 	quitting       bool
 	timerModel     TimerClockModel
 	stopWatchModel StopWatchModel
+	pomodoroState  PomodoroState
 
 	width, height int
 }
 
 func NewApp(view AppView) App {
 	return App{
+		view:           view,
 		timerModel:     NewTimerClockModel(),
 		stopWatchModel: NewStopWatchModel(),
+		pomodoroState:  NewPomodoroState(),
 	}
 }
 
@@ -37,6 +42,7 @@ func (a App) Init() tea.Cmd {
 	case AppViewStopWatch:
 		return a.stopWatchModel.Init()
 	}
+	// return initCmd()
 	return nil
 }
 
@@ -51,17 +57,30 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		a.timerModel.height = msg.Height
 		a.timerModel.width = msg.Width
+
+		a.pomodoroState.height = msg.Height
+		a.pomodoroState.width = msg.Width
+
 		utils.NotifyAppMounted()
 		return a, nil
 
+	// case DaemonStateMsg:
+	// 	a.pomodoroState.Running = msg.Running
+	// 	// logger.Info(a.pomodoroState.Running)
+	// 	return a, nil
+	//
 	case tea.KeyMsg:
 		switch msg.String() {
 
 		case "tab": // Toggle between views
-			if a.view == AppViewStopWatch {
+			a.view++
+			if a.view >= AppViewNone {
 				a.view = AppViewTimer
-			} else {
-				a.view = AppViewStopWatch
+			}
+		case "shift+tab": // Previous view
+			a.view--
+			if a.view < AppViewTimer {
+				a.view = AppViewNone - 1
 			}
 
 		case "q", "ctrl+c": // Exit app
@@ -81,6 +100,11 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		newModel, cmd := a.stopWatchModel.Update(msg)
 		a.stopWatchModel = newModel.(StopWatchModel)
 		return a, cmd
+
+	case AppViewPomodoro:
+		newModel, cmd := a.pomodoroState.Update(msg)
+		a.pomodoroState = newModel.(PomodoroState)
+		return a, cmd
 	}
 	return a, nil
 }
@@ -96,6 +120,8 @@ func (a App) View() string {
 		view = a.timerModel.View()
 	case AppViewStopWatch:
 		view = a.stopWatchModel.View()
+	case AppViewPomodoro:
+		view = a.pomodoroState.View()
 	}
 
 	return lipgloss.Place(

@@ -6,23 +6,18 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hasan/superclock/app"
-	"github.com/hasan/superclock/pkg/logger"
-	"github.com/joho/godotenv"
+	"github.com/hasan/superclock/cmd"
 )
 
 func UNUSED(x ...any) {}
 
 func main() {
-	// Load .env file
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, continuing...")
-	}
+	closeLogger := cmd.SetupDotEnv()
+	defer closeLogger()
 
-	// Initialize logger
-	logger.Init()
-	defer logger.Close()
+	cmd.RegisterGob()
 
-	app := app.NewApp(app.AppViewStopWatch)
+	app := app.NewApp(app.AppViewPomodoro)
 	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Printf("App run failed: %v", err)

@@ -1,20 +1,11 @@
-package ui
+package utils
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hasan/superclock/app/utils"
+	"github.com/hasan/superclock/app/constants"
 )
 
-type Digits map[rune][]string
-type FontName int
-
-const (
-	DefaultFont FontName = iota
-	BigNarrowFont
-	NerdFont
-)
-
-var NERD_FONTS = Digits{
+var NERD_FONTS = constants.Digits{
 	'0': {"󰬹"},
 	'1': {"󰬺"},
 	'2': {"󰬻"},
@@ -28,7 +19,7 @@ var NERD_FONTS = Digits{
 	':': {":"}, // colon
 }
 
-var BIG_NARROW_FONT = Digits{
+var BIG_NARROW_FONT = constants.Digits{
 	'0': {
 		"███",
 		"█ █",
@@ -108,11 +99,11 @@ var BIG_NARROW_FONT = Digits{
 	},
 }
 
-func getDigits(fontName FontName) Digits {
+func getDigits(fontName constants.FontName) constants.Digits {
 	switch fontName {
-	case BigNarrowFont:
+	case constants.BigNarrowFont:
 		return BIG_NARROW_FONT
-	case DefaultFont:
+	case constants.DefaultFont:
 		fallthrough
 	default:
 		return NERD_FONTS
@@ -140,7 +131,7 @@ func getDigits(fontName FontName) Digits {
 // }
 
 // Render function using Lip Gloss
-func RenderBigDigits(s string, fontName FontName, style lipgloss.Style) string {
+func RenderBigDigits(s string, fontName constants.FontName, style lipgloss.Style) string {
 	digits := getDigits(fontName)
 
 	lines := []string{}
@@ -165,8 +156,8 @@ func RenderBigDigits(s string, fontName FontName, style lipgloss.Style) string {
 				}
 
 				// Don't Add space if char is : and NF
-				isColonAndNF := line == ":" && fontName == NerdFont
-				parts = append(parts, style.Render(line)+utils.If(isColonAndNF, "", " "))
+				isColonAndNF := line == ":" && fontName == constants.NerdFont
+				parts = append(parts, style.Render(line)+If(isColonAndNF, "", " "))
 			}
 		}
 		lines = append(lines, lipgloss.JoinHorizontal(lipgloss.Left, parts...))

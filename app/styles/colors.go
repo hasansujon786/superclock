@@ -10,6 +10,7 @@ type Colors struct {
 	Success   lipgloss.Color
 	Muted     lipgloss.Color
 	Black     lipgloss.Color
+	White     lipgloss.Color
 }
 
 var ThemeColors = Colors{
@@ -20,4 +21,5 @@ var ThemeColors = Colors{
 	Success:   lipgloss.Color("2"),   // green
 	Muted:     lipgloss.Color("240"), // gray
 	Black:     lipgloss.Color("#222222"), // gray
+	White:     lipgloss.Color("230"), // gray
 }

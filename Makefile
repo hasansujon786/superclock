@@ -15,12 +15,22 @@ build:
 	go build -o bin/client ./cmd/client
 	go build -o bin/daemon ./cmd/daemon
 
+# # Run the app
+# .PHONY: run
+# run:
+# 	@echo "Running $(BINARY)..."
+# 	go run cmd/daemon/main.go & \
+# 	DAEMON_PID=$$!; \
+# 	sleep 2; \
+# 	go run cmd/client/main.go; \
+# 	kill $$DAEMON_PID
+
 # Run the app
 .PHONY: run
 run:
 	@echo "Running $(BINARY)..."
-	go run cmd/daemon/main.go & \
+	go run cmd/simpledaemon/main.go & \
 	DAEMON_PID=$$!; \
 	sleep 2; \
-	go run cmd/client/main.go; \
+	go run cmd/$(BINARY)/main.go; \
 	kill $$DAEMON_PID

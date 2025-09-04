@@ -43,3 +43,15 @@ type Request struct {
 	Cmd     Command
 	Payload any
 }
+
+// ------------------------------------------------
+// -- Digits --------------------------------------
+// ------------------------------------------------
+type Digits map[rune][]string
+type FontName int
+
+const (
+	DefaultFont FontName = iota
+	BigNarrowFont
+	NerdFont
+)

@@ -1,14 +1,12 @@
 package app
 
 import (
-	"time"
-
 	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hasan/superclock/app/ui"
 	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/styles"
+	"github.com/hasan/superclock/app/ui"
 	"github.com/hasan/superclock/app/utils"
 )
 
@@ -21,7 +19,7 @@ type TimerClockModel struct {
 
 func NewTimerClockModel() TimerClockModel {
 	return TimerClockModel{
-		timer:  timer.NewWithInterval(0, time.Millisecond),
+		timer:  timer.New(0),
 		picker: ui.NewTimerWheelModel(ui.CursorPosSecond),
 	}
 }
@@ -105,7 +103,7 @@ func (m TimerClockModel) View() string {
 	content := ""
 
 	if isRunning || isPaused {
-		timeDigit := ui.TimerDigit(utils.FormatDuration(m.timer.Timeout), cWidth, ui.NerdFont)
+		timeDigit := ui.TimerDigit(utils.FormatDuration(m.timer.Timeout), cWidth, constants.NerdFont)
 		totalTime := utils.FormatDuration(m.picker.Value.ToDuration())
 
 		content = lipgloss.JoinVertical(

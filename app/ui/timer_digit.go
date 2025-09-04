@@ -2,23 +2,25 @@ package ui
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/styles"
+	"github.com/hasan/superclock/app/utils"
 )
 
-func TimerDigit(digits string, width int, fontName FontName) string {
+func TimerDigit(digits string, width int, fontName constants.FontName) string {
 	var (
 		output    string
 		topMargin int
 	)
 
 	switch fontName {
-	case BigNarrowFont, NerdFont:
+	case constants.BigNarrowFont, constants.NerdFont:
 		topMargin = 1
 		textStyle := lipgloss.NewStyle().
 			Foreground(styles.ThemeColors.Primary)
 
-		output = RenderBigDigits(digits, fontName, textStyle)
-	case DefaultFont:
+		output = utils.RenderBigDigits(digits, fontName, textStyle)
+	case constants.DefaultFont:
 		fallthrough
 	default:
 		textStyle := lipgloss.NewStyle().

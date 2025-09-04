@@ -3,8 +3,8 @@ package cmd
 import (
 	"encoding/gob"
 	"log"
+	"time"
 
-	"github.com/hasan/superclock/app/features/timer"
 	"github.com/hasan/superclock/app/models"
 	"github.com/hasan/superclock/pkg/logger"
 	"github.com/joho/godotenv"
@@ -12,8 +12,8 @@ import (
 
 // Register types that will pass through connection
 func RegisterGob() {
-	gob.Register(models.PickerValue{})
-	gob.Register(timer.TimerState{})
+	gob.Register(time.Second)
+	gob.Register(models.CmdSetTimerPayload{})
 }
 
 func SetupDotEnv() func() {
