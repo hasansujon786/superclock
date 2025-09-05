@@ -137,7 +137,7 @@ func (m model) View() string {
 	content := ""
 
 	if isTimerActive {
-		timeDigit := ui.TimerDigit(utils.FormatDuration(m.timer.Elapsed), cWidth, ui.NerdFont)
+		timeDigit := ui.TimerDigit(utils.FormatDuration(m.timer.Elapsed), cWidth, constants.NerdFont)
 		totalTime := utils.FormatDuration(m.timer.Timeout)
 
 		content = lipgloss.JoinVertical(

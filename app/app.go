@@ -4,6 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hasan/superclock/app/utils"
+	"github.com/hasan/superclock/pkg/logger"
 )
 
 type AppView int
@@ -20,29 +21,43 @@ type App struct {
 	quitting       bool
 	timerModel     TimerClockModel
 	stopWatchModel StopWatchModel
-	pomodoroState  PomodoroState
+	pomodoroState  PomodoroModel
 
 	width, height int
 }
 
-func NewApp(view AppView) App {
+func NewApp(view AppView, daemonState any) App {
+	if data, ok := daemonState.(DaemonStateMsg); ok {
+		logger.Info(daemonState)
+		logger.Info("NewApp Started...")
+
+		if data.Running {
+			return App{
+				view:           view,
+				timerModel:     NewTimerClockModel(),
+				stopWatchModel: NewStopWatchModel(),
+				pomodoroState:  NewPomodoroWithState(data),
+			}
+		}
+	}
+
 	return App{
 		view:           view,
 		timerModel:     NewTimerClockModel(),
 		stopWatchModel: NewStopWatchModel(),
-		pomodoroState:  NewPomodoroState(),
+		pomodoroState:  NewPomodoroModel(),
 	}
 }
 
 func (a App) Init() tea.Cmd {
-	// Delegate to the current sub-model
 	switch a.view {
 	case AppViewTimer:
 		return a.timerModel.Init()
 	case AppViewStopWatch:
 		return a.stopWatchModel.Init()
+	case AppViewPomodoro:
+		return a.pomodoroState.Init()
 	}
-	// return initCmd()
 	return nil
 }
 
@@ -65,10 +80,9 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	// case DaemonStateMsg:
-	// 	a.pomodoroState.Running = msg.Running
-	// 	// logger.Info(a.pomodoroState.Running)
+	// 	logger.Info("DaemonStateMsg")
 	// 	return a, nil
-	//
+
 	case tea.KeyMsg:
 		switch msg.String() {
 
@@ -103,7 +117,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case AppViewPomodoro:
 		newModel, cmd := a.pomodoroState.Update(msg)
-		a.pomodoroState = newModel.(PomodoroState)
+		a.pomodoroState = newModel.(PomodoroModel)
 		return a, cmd
 	}
 	return a, nil

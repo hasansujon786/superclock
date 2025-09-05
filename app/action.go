@@ -16,8 +16,8 @@ type DaemonStateMsg struct {
 	Running  bool
 }
 
-// sendCmd connects to daemon and sends a command
-func sendCmd(cmd constants.Command, payload any) tea.Cmd {
+// _sendCmd connects to daemon and sends a command
+func _sendCmd[T any](cmd constants.Command, payload any) tea.Cmd {
 	return func() tea.Msg {
 		conn, err := net.Dial("tcp", constants.Address)
 		if err != nil {
@@ -34,18 +34,23 @@ func sendCmd(cmd constants.Command, payload any) tea.Cmd {
 			return err
 		}
 
-		var timer DaemonStateMsg
-		if err := dec.Decode(&timer); err != nil {
+		var msg T
+		if err := dec.Decode(&msg); err != nil {
 			return err
 		}
 
-		return timer
+		return msg
 	}
 }
 
-// tickDaemon periodically fetches the latest state
-func initCmd() tea.Cmd {
-	return func() tea.Msg {
-		return sendCmd(constants.CmdGet, nil)()
-	}
+func daemonCmd(cmd constants.Command, payload any) tea.Cmd {
+	return _sendCmd[DaemonStateMsg](cmd, payload)
+}
+
+// func initCmd() tea.Cmd {
+// 	return _sendCmd[DaemonStateMsg](constants.CmdGet, nil)
+// }
+
+func InitDaemonState() any {
+	return _sendCmd[DaemonStateMsg](constants.CmdGet, nil)()
 }

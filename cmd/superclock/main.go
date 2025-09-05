@@ -17,7 +17,7 @@ func main() {
 
 	cmd.RegisterGob()
 
-	app := app.NewApp(app.AppViewPomodoro)
+	app := app.NewApp(app.AppViewPomodoro, app.InitDaemonState())
 	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Printf("App run failed: %v", err)

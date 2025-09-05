@@ -33,20 +33,17 @@ func (s *DaemonState) Tick() {
 	}
 
 	s.Elapsed += s.Interval
-	if s.Elapsed > s.Timeout {
+	if s.Elapsed >= s.Timeout {
 		s.Elapsed = s.Timeout
 		s.Running = false
 
-		// _ = enc.Encode(state) I want notify client from here with Running false falue
-		beeep.Notify("Timer Alert", "Timer completed!", "")
+		_ = beeep.Notify("Timer Alert", "Timer completed!", "")
 	}
 
 	// Example: notify every 10s
-	if int(s.Elapsed.Seconds())%10 == 0 && s.Elapsed.Seconds() != 0 {
-		beeep.Notify("Timer Alert",
-			fmt.Sprintf("Elapsed: %s", s.Elapsed.String()),
-			"")
-	}
+	// if int(s.Elapsed.Seconds())%10 == 0 && s.Elapsed.Seconds() != 0 {
+	// 	beeep.Notify("Timer Alert", fmt.Sprintf("Elapsed: %s", s.Elapsed.String()), "")
+	// }
 }
 
 // TODO: check time before play
@@ -90,8 +87,7 @@ func main() {
 	cmd.RegisterGob()
 
 	state := &DaemonState{
-		// Running:  true,
-		Timeout:  0,           // default 1 min
+		Timeout:  0,           // default timeout
 		Interval: time.Second, // tick every 1s
 	}
 

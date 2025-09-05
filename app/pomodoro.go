@@ -11,17 +11,18 @@ import (
 	"github.com/hasan/superclock/app/styles"
 	"github.com/hasan/superclock/app/ui"
 	"github.com/hasan/superclock/app/utils"
+	"github.com/hasan/superclock/pkg/logger"
 )
 
 type pomodoroView int
 
 const (
-	viewChoice pomodoroView = iota
+	viewDashboard pomodoroView = iota
 	viewTimer
 	viewEdit
 )
 
-type PomodoroState struct {
+type PomodoroModel struct {
 	choices     []string
 	choiceTimes []time.Duration
 	currentView pomodoroView
@@ -33,21 +34,29 @@ type PomodoroState struct {
 	width, height int
 }
 
-func NewPomodoroState() PomodoroState {
-	// val := models.PickerValue{Minute: 3, Second: 0, Hour: 0}
-	return PomodoroState{
-		currentView: viewChoice,
+func NewPomodoroModel() PomodoroModel {
+	return PomodoroModel{
+		currentView: viewDashboard,
 		timer:       timer.New(0),
 		choices:     []string{"Work", "Break"},
 		choiceTimes: []time.Duration{15 * time.Second, 5 * time.Second},
 	}
 }
-
-func (m PomodoroState) Init() tea.Cmd {
-	return nil
+func NewPomodoroWithState(ds DaemonStateMsg) PomodoroModel {
+	logger.Info("NewPomodoroWithState")
+	return PomodoroModel{
+		currentView: viewTimer,
+		timer:       timer.New(ds.Timeout - ds.Elapsed),
+		choices:     []string{"Work", "Break"},
+		choiceTimes: []time.Duration{15 * time.Second, 5 * time.Second},
+	}
 }
 
-func (m PomodoroState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m PomodoroModel) Init() tea.Cmd {
+	return m.timer.Init()
+}
+
+func (m PomodoroModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case timer.TickMsg:
 		var cmd tea.Cmd
@@ -59,14 +68,15 @@ func (m PomodoroState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.timer, cmd = m.timer.Update(msg)
 		return m, cmd
 
-	// case timer.TimeoutMsg:
-	// 	// m.paused = false
-	// 	// m.picker.FocusLast()
-	// 	return m, nil
+	case timer.TimeoutMsg:
+		var cmd tea.Cmd
+		m.currentView = viewDashboard
+		m.timer, cmd = m.timer.Update(msg)
+		return m, cmd
 
 	case tea.KeyMsg:
 		switch m.currentView {
-		case viewChoice:
+		case viewDashboard: // Dashboard mappings
 			switch msg.String() {
 			case "left", "h":
 				if m.cursor > 0 {
@@ -78,11 +88,13 @@ func (m PomodoroState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case "enter":
 				m.timer.Timeout = m.choiceTimes[m.cursor]
+				m.currentView = viewTimer
+
 				return m, tea.Batch(
 					m.timer.Start(),
-					sendCmd(constants.CmdSetTimer, models.CmdSetTimerPayload{
+					daemonCmd(constants.CmdSetTimer, models.CmdSetTimerPayload{
 						Timeout: m.timer.Timeout,
-						Play: true,
+						Play:    true,
 					}),
 				)
 			}
@@ -95,24 +107,24 @@ func (m PomodoroState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m PomodoroState) View() string {
+func (m PomodoroModel) View() string {
 	cWidth := styles.ContainerStyle.GetWidth()
 	cHeight := styles.ContainerStyle.GetHeight()
 	header := styles.HeaderStyle.Render("      ⌛Pomodoro     ")
 
-	isRunning := m.timer.Running()
+	// isRunning := m.timer.Running()
 
 	content := ""
 
-	if isRunning {
-		content += lipgloss.JoinVertical(
+	if m.currentView == viewTimer {
+		content = lipgloss.JoinVertical(
 			lipgloss.Center,
 			ui.TimerDigit(utils.FormatDuration(m.timer.Timeout), cWidth, constants.NerdFont),
 			"",
 			"",
 		)
 	} else {
-		content += lipgloss.JoinVertical(
+		content = lipgloss.JoinVertical(
 			lipgloss.Center,
 			utils.FormatDurationHumanize(m.choiceTimes[m.cursor]),
 			"",
@@ -127,7 +139,7 @@ func (m PomodoroState) View() string {
 	return lipgloss.JoinVertical(lipgloss.Center, header, viewBox, footer)
 }
 
-func buildModeConfirm(m PomodoroState) string {
+func buildModeConfirm(m PomodoroModel) string {
 	buttonStyle := lipgloss.NewStyle().
 		Padding(0, 4).
 		Background(styles.ThemeColors.Muted)
