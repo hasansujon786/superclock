@@ -1,9 +1,7 @@
 package timer
 
 import (
-	"fmt"
-	"time"
-
+	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hasan/superclock/app/constants"
@@ -12,85 +10,67 @@ import (
 	"github.com/hasan/superclock/app/utils"
 )
 
-// TimerState matches the daemon TimerState
-type TimerState struct {
-	Timeout  time.Duration
-	Interval time.Duration
-	Elapsed  time.Duration
-	Running  bool
+type TimerClockModel struct {
+	timer         timer.Model
+	paused        bool
+	picker        ui.TimerWheelModel
+	width, height int
 }
 
-type model struct {
-	timer        TimerState
-	picker       ui.TimerWheelModel
-	err          error
-	hasConnError bool
-}
-
-func NewModel() model {
-	return model{
+func NewTimerClockModel() TimerClockModel {
+	return TimerClockModel{
+		timer:  timer.New(0),
 		picker: ui.NewTimerWheelModel(ui.CursorPosSecond),
 	}
 }
 
-func (m model) pickerKeymaps(msg tea.Msg) (model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "h":
-			m.picker.PickerMoveCursorLeft()
-		case "l":
-			m.picker.PickerMoveCursorRight()
-		case "k":
-			m.picker.IncreaseValue()
-		case "j":
-			m.picker.DecreaseValue()
-		case "r":
-			m.picker.Reset()
-		case "x":
-			m.picker.ResetCurrent()
-		case " ", "s", "enter", "esc":
-			if m.picker.Value.IsEmpty() {
-				return m, nil
-			}
-
-			m.picker.Blur()
-			return m, tea.Batch(
-				sendCmd(constants.CmdSetTimer, m.picker.Value),
-				sendCmd(constants.CmdPlay, nil),
-			)
-		}
-
-	}
-	return m, nil
+func (m TimerClockModel) Init() tea.Cmd {
+	// return m.timer.Init()
+	return nil
 }
 
-// Init connects to the daemon and starts periodic updates
-func (m model) Init() tea.Cmd {
-	return tickDaemon()
-}
-
-// Update handles messages
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m TimerClockModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case timer.TickMsg:
+		var cmd tea.Cmd
+		m.timer, cmd = m.timer.Update(msg)
+		return m, cmd
+
+	case timer.StartStopMsg:
+		var cmd tea.Cmd
+		m.timer, cmd = m.timer.Update(msg)
+		return m, cmd
+
+	case timer.TimeoutMsg:
+		m.paused = false
+		m.picker.FocusLast()
+		return m, nil
 
 	case tea.KeyMsg:
-		switch m.picker.Position {
-		// CASE: Inside timer
-		case ui.CursorPosNone:
+		switch (constants.ClockState{Running: m.timer.Running(), Paused: m.paused}) {
+		// Clock is running or the clock is paused
+		case constants.ClockStateRunning, constants.ClockStatePaused:
 			switch msg.String() {
-			case " ":
-				// TODO: check time before play
-				return m, sendCmd(constants.CmdToggle, nil)
-			case "q", "ctrl+c":
-				return m, tea.Quit
-			case "s", "i":
-				m.picker.FocusLast()
-				return m, sendCmd(constants.CmdReset, nil)
+
+			// Reset current timer
 			case "r":
-				return m, sendCmd(constants.CmdReset, nil)
-				// case "g":
-				// 	return m, sendCmd(constants.CmdGet, nil)
+				m.timer.Timeout = m.picker.Value.ToDuration()
+				return m, nil
+
+				// FIXME: fix layout jumps while pausing
+				// Pause and Start timer
+			case " ":
+				m.paused = !m.paused
+				if m.paused {
+					return m, m.timer.Stop()
+				}
+				return m, m.timer.Start()
+
+				// Stop timer & focus input
+			case "s", "i", "esc":
+				m.paused = false
+				m.picker.FocusLast()
+				return m, m.timer.Stop()
 			}
 
 		// CASE: Inside picker
@@ -99,32 +79,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m, cmd = m.pickerKeymaps(msg)
 			return m, cmd
 		}
-
-	case TimerState:
-		m.timer = msg
-		// logger.Info("TimerState",)
-		return m, tickDaemon() // schedule next update
-
-	case error:
-		m.err = msg
-		m.hasConnError = true
-		return m, tickDaemon()
 	}
 
 	return m, nil
 }
 
-// View renders the timer
-func (m model) View() string {
-	if m.hasConnError {
-		return fmt.Sprintf("Error connecting to daemon: %v\nPress q to quit", m.err)
-	}
-
+func (m TimerClockModel) View() string {
 	cWidth := styles.ContainerStyle.GetWidth()
 	cHeight := styles.ContainerStyle.GetHeight()
 
-	isTimerActive := m.picker.Position == ui.CursorPosNone
-	isPaused := !m.timer.Running && isTimerActive
+	clkState := constants.ClockState{Running: m.timer.Running(), Paused: m.paused}
+	isPaused := clkState.IsPaused()
+	isRunning := clkState.IsRunning()
 
 	playBtn := ui.ButtonStyles.Render("   ")
 	escBtn := ui.ButtonStyles.Render("   ")
@@ -136,9 +102,9 @@ func (m model) View() string {
 
 	content := ""
 
-	if isTimerActive {
-		timeDigit := ui.TimerDigit(utils.FormatDuration(m.timer.Elapsed), cWidth, constants.NerdFont)
-		totalTime := utils.FormatDuration(m.timer.Timeout)
+	if isRunning || isPaused {
+		timeDigit := ui.TimerDigit(utils.FormatDuration(m.timer.Timeout), cWidth, constants.NerdFont)
+		totalTime := utils.FormatDuration(m.picker.Value.ToDuration())
 
 		content = lipgloss.JoinVertical(
 			lipgloss.Center,
@@ -171,27 +137,50 @@ func (m model) View() string {
 		lipgloss.Place(cWidth, cHeight, lipgloss.Center, lipgloss.Center, content),
 	)
 
-	footer := buildFooter(isTimerActive, isPaused)
+	footer := buildFooter(isRunning, isPaused)
 	return lipgloss.JoinVertical(lipgloss.Center, header, viewBox, footer)
 }
 
-// tickDaemon periodically fetches the latest state
-func tickDaemon() tea.Cmd {
-	return func() tea.Msg {
-		return sendCmd(constants.CmdGet, nil)()
+func (m TimerClockModel) pickerKeymaps(msg tea.Msg) (TimerClockModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "i":
+			m.picker.FocusLast()
+		case "h":
+			m.picker.PickerMoveCursorLeft()
+		case "l":
+			m.picker.PickerMoveCursorRight()
+		case "k":
+			m.picker.IncreaseValue()
+		case "j":
+			m.picker.DecreaseValue()
+		case "r":
+			m.picker.Reset()
+		case "x":
+			m.picker.ResetCurrent()
+		case "esc":
+			m.picker.Blur()
+		case " ", "s", "enter":
+			m.timer.Timeout = m.picker.Value.ToDuration()
+			return m, m.timer.Start()
+		}
+		return m, nil
 	}
+
+	return m, nil
 }
 
-func buildFooter(isTimerActive, isPaused bool) string {
+func buildFooter(isRunning, isPaused bool) string {
 	footerMsg := "    "
 
-	if isTimerActive && isPaused {
-		footerMsg += "space: play "
-	} else {
+	if isRunning && !isPaused {
 		footerMsg += "space: pause"
+	} else {
+		footerMsg += "space: play "
 	}
 
-	if isTimerActive {
+	if isRunning {
 		footerMsg += " • s: stop "
 	} else {
 		footerMsg += " • s: start"

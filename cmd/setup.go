@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/hasan/superclock/app"
 	"github.com/hasan/superclock/app/models"
 	"github.com/hasan/superclock/pkg/logger"
 	"github.com/joho/godotenv"
@@ -15,7 +14,7 @@ import (
 func RegisterGob() {
 	gob.Register(time.Second)
 	gob.Register(models.CmdSetTimerPayload{})
-	gob.Register(app.DaemonStateMsg{})
+	gob.Register(models.DaemonStateMsg{})
 }
 
 func SetupDotEnv() func() {

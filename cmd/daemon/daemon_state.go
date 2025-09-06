@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gen2brain/beeep"
-	"github.com/hasan/superclock/app"
 	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/models"
 	"github.com/hasan/superclock/pkg/logger"
@@ -17,7 +16,7 @@ import (
 // DaemonStateMutex is like bubble state.Model
 type DaemonStateMutex struct {
 	mu sync.Mutex
-	app.DaemonStateMsg
+	models.DaemonStateMsg
 }
 
 func (s *DaemonStateMutex) Tick() {
@@ -83,7 +82,7 @@ func handleConn(conn net.Conn, state *DaemonStateMutex) {
 	dec := gob.NewDecoder(conn)
 	enc := gob.NewEncoder(conn)
 
-	var req constants.Request
+	var req models.Request
 	if err := dec.Decode(&req); err != nil {
 		fmt.Println("Error decoding command:", err)
 		return

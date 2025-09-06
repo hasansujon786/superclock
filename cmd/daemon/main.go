@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/hasan/superclock/app"
 	"github.com/hasan/superclock/app/constants"
+	"github.com/hasan/superclock/app/models"
 	"github.com/hasan/superclock/cmd"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	cmd.RegisterGob()
 
 	state := &DaemonStateMutex{
-		DaemonStateMsg: app.DaemonStateMsg{
+		DaemonStateMsg: models.DaemonStateMsg{
 			Timeout:  0,           // default timeout
 			Interval: time.Second, // tick every 1s
 		},

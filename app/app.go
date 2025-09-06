@@ -3,6 +3,10 @@ package app
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hasan/superclock/app/features/pomodoro"
+	"github.com/hasan/superclock/app/features/stopwatch"
+	"github.com/hasan/superclock/app/features/timer"
+	"github.com/hasan/superclock/app/models"
 	"github.com/hasan/superclock/app/utils"
 	"github.com/hasan/superclock/pkg/logger"
 )
@@ -19,33 +23,33 @@ const (
 type App struct {
 	view           AppView
 	quitting       bool
-	timerModel     TimerClockModel
-	stopWatchModel StopWatchModel
-	pomodoroState  PomodoroModel
+	timerModel     timer.TimerClockModel
+	stopWatchModel stopwatch.StopWatchModel
+	pomodoroState  pomodoro.PomodoroModel
 
 	width, height int
 }
 
 func NewApp(view AppView, daemonState any) App {
-	if data, ok := daemonState.(DaemonStateMsg); ok {
+	if data, ok := daemonState.(models.DaemonStateMsg); ok {
 		logger.Info(daemonState)
 		logger.Info("NewApp Started...")
 
 		if data.Running {
 			return App{
 				view:           view,
-				timerModel:     NewTimerClockModel(),
-				stopWatchModel: NewStopWatchModel(),
-				pomodoroState:  NewPomodoroWithState(data),
+				timerModel:     timer.NewTimerClockModel(),
+				stopWatchModel: stopwatch.NewStopWatchModel(),
+				pomodoroState:  pomodoro.NewPomodoroWithState(data),
 			}
 		}
 	}
 
 	return App{
 		view:           view,
-		timerModel:     NewTimerClockModel(),
-		stopWatchModel: NewStopWatchModel(),
-		pomodoroState:  NewPomodoroModel(),
+		timerModel:     timer.NewTimerClockModel(),
+		stopWatchModel: stopwatch.NewStopWatchModel(),
+		pomodoroState:  pomodoro.NewPomodoroModel(),
 	}
 }
 
@@ -66,15 +70,6 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		a.width, a.height = msg.Width, msg.Height
-
-		a.stopWatchModel.height = msg.Height
-		a.stopWatchModel.width = msg.Width
-
-		a.timerModel.height = msg.Height
-		a.timerModel.width = msg.Width
-
-		a.pomodoroState.height = msg.Height
-		a.pomodoroState.width = msg.Width
 
 		utils.NotifyAppMounted()
 		return a, nil
@@ -107,17 +102,17 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch a.view {
 	case AppViewTimer:
 		newModel, cmd := a.timerModel.Update(msg)
-		a.timerModel = newModel.(TimerClockModel)
+		a.timerModel = newModel.(timer.TimerClockModel)
 		return a, cmd
 
 	case AppViewStopWatch:
 		newModel, cmd := a.stopWatchModel.Update(msg)
-		a.stopWatchModel = newModel.(StopWatchModel)
+		a.stopWatchModel = newModel.(stopwatch.StopWatchModel)
 		return a, cmd
 
 	case AppViewPomodoro:
 		newModel, cmd := a.pomodoroState.Update(msg)
-		a.pomodoroState = newModel.(PomodoroModel)
+		a.pomodoroState = newModel.(pomodoro.PomodoroModel)
 		return a, cmd
 	}
 	return a, nil

@@ -1,4 +1,4 @@
-package app
+package pomodoro
 
 import (
 	"time"
@@ -31,7 +31,7 @@ type PomodoroModel struct {
 
 	cursor        int
 	Running       bool
-	width, height int
+	Width, Height int
 }
 
 func NewPomodoroModel() PomodoroModel {
@@ -42,7 +42,7 @@ func NewPomodoroModel() PomodoroModel {
 		choiceTimes: []time.Duration{15 * time.Second, 5 * time.Second},
 	}
 }
-func NewPomodoroWithState(ds DaemonStateMsg) PomodoroModel {
+func NewPomodoroWithState(ds models.DaemonStateMsg) PomodoroModel {
 	logger.Info("NewPomodoroWithState")
 	return PomodoroModel{
 		currentView: viewTimer,
@@ -92,7 +92,7 @@ func (m PomodoroModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				return m, tea.Batch(
 					m.timer.Start(),
-					daemonCmd(constants.CmdSetTimer, models.CmdSetTimerPayload{
+					utils.DaemonCmd(constants.CmdSetTimer, models.CmdSetTimerPayload{
 						Timeout: m.timer.Timeout,
 						Play:    true,
 					}),
