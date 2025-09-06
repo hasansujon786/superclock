@@ -20,105 +20,103 @@ const (
 	AppViewNone
 )
 
-type App struct {
-	view           AppView
-	quitting       bool
-	timerModel     timer.TimerClockModel
-	stopWatchModel stopwatch.StopWatchModel
-	pomodoroState  pomodoro.PomodoroModel
+type app struct {
+	timer     timer.TimerClockModel
+	stopwatch stopwatch.StopWatchModel
+	pomodoro  pomodoro.PomodoroModel
 
+	view          AppView
+	quitting      bool
 	width, height int
 }
 
-func NewApp(view AppView, daemonState any) App {
+func NewApp(view AppView, daemonState any) app {
 	if data, ok := daemonState.(models.DaemonStateMsg); ok {
 		logger.Info(daemonState)
 		logger.Info("NewApp Started...")
 
 		if data.Running {
-			return App{
-				view:           view,
-				timerModel:     timer.NewTimerClockModel(),
-				stopWatchModel: stopwatch.NewStopWatchModel(),
-				pomodoroState:  pomodoro.NewPomodoroWithState(data),
+			return app{
+				view:      view,
+				timer:     timer.NewTimerClockModel(),
+				stopwatch: stopwatch.NewStopWatchModel(),
+				pomodoro:  pomodoro.NewPomodoroWithState(data),
 			}
 		}
 	}
 
-	return App{
-		view:           view,
-		timerModel:     timer.NewTimerClockModel(),
-		stopWatchModel: stopwatch.NewStopWatchModel(),
-		pomodoroState:  pomodoro.NewPomodoroModel(),
+	return app{
+		view:      view,
+		timer:     timer.NewTimerClockModel(),
+		stopwatch: stopwatch.NewStopWatchModel(),
+		pomodoro:  pomodoro.NewPomodoroModel(),
 	}
 }
 
-func (a App) Init() tea.Cmd {
+func (a app) Init() tea.Cmd {
 	switch a.view {
 	case AppViewTimer:
-		return a.timerModel.Init()
+		return a.timer.Init()
 	case AppViewStopWatch:
-		return a.stopWatchModel.Init()
+		return a.stopwatch.Init()
 	case AppViewPomodoro:
-		return a.pomodoroState.Init()
+		return a.pomodoro.Init()
 	}
 	return nil
 }
 
-func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
 		a.width, a.height = msg.Width, msg.Height
-
 		utils.NotifyAppMounted()
-		return a, nil
-
-	// case DaemonStateMsg:
-	// 	logger.Info("DaemonStateMsg")
-	// 	return a, nil
+		return a.updateSubModels(msg) // Pass resize msg to all sub models too
 
 	case tea.KeyMsg:
 		switch msg.String() {
-
-		case "tab": // Toggle between views
+		case "tab":
 			a.view++
 			if a.view >= AppViewNone {
 				a.view = AppViewTimer
 			}
-		case "shift+tab": // Previous view
+		case "shift+tab":
 			a.view--
 			if a.view < AppViewTimer {
 				a.view = AppViewNone - 1
 			}
-
-		case "q", "ctrl+c": // Exit app
+		case "q", "ctrl+c":
 			a.quitting = true
 			return a, tea.Quit
 		}
 	}
 
-	// Delegate to current submodel
-	switch a.view {
-	case AppViewTimer:
-		newModel, cmd := a.timerModel.Update(msg)
-		a.timerModel = newModel.(timer.TimerClockModel)
-		return a, cmd
-
-	case AppViewStopWatch:
-		newModel, cmd := a.stopWatchModel.Update(msg)
-		a.stopWatchModel = newModel.(stopwatch.StopWatchModel)
-		return a, cmd
-
-	case AppViewPomodoro:
-		newModel, cmd := a.pomodoroState.Update(msg)
-		a.pomodoroState = newModel.(pomodoro.PomodoroModel)
-		return a, cmd
-	}
-	return a, nil
+	return a.updateSubModels(msg)
 }
 
-func (a App) View() string {
+func (a app) updateSubModels(msg tea.Msg) (app, tea.Cmd) {
+	var cmds []tea.Cmd
+
+	// Timer
+	newTimer, cmd := a.timer.Update(msg)
+	a.timer = newTimer.(timer.TimerClockModel)
+	cmds = append(cmds, cmd)
+
+	// Stopwatch
+	newStopwatch, cmd := a.stopwatch.Update(msg)
+	a.stopwatch = newStopwatch.(stopwatch.StopWatchModel)
+	cmds = append(cmds, cmd)
+
+	// Pomodoro
+	newPomodoro, cmd := a.pomodoro.Update(msg)
+	a.pomodoro = newPomodoro.(pomodoro.PomodoroModel)
+	cmds = append(cmds, cmd)
+
+	// Only render active view, but keep others updated
+	return a, tea.Batch(cmds...)
+}
+
+func (a app) View() string {
 	if a.quitting {
 		return ""
 	}
@@ -126,11 +124,11 @@ func (a App) View() string {
 	view := ""
 	switch a.view {
 	case AppViewTimer:
-		view = a.timerModel.View()
+		view = a.timer.View()
 	case AppViewStopWatch:
-		view = a.stopWatchModel.View()
+		view = a.stopwatch.View()
 	case AppViewPomodoro:
-		view = a.pomodoroState.View()
+		view = a.pomodoro.View()
 	}
 
 	return lipgloss.Place(
