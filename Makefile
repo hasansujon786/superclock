@@ -29,19 +29,19 @@ build:
 .PHONY: run
 run:
 	@echo "Running $(BINARY)..."
-	go run cmd/simpledaemon/main.go & \
+	go run ./cmd/daemon & \
 	DAEMON_PID=$$!; \
 	sleep 2; \
-	go run cmd/$(BINARY)/main.go; \
+	go run ./cmd/client; \
 	kill $$DAEMON_PID
 	
 	
 .PHONY: client
 client:
 	@echo "Running $(BINARY) client..."
-	go run cmd/$(BINARY)/main.go
+	go run ./cmd/client
 		
 .PHONY: daemon
 daemon:
 	@echo "Running $(BINARY) daemon..."
-	go run cmd/simpledaemon/main.go
+	go run ./cmd/daemon

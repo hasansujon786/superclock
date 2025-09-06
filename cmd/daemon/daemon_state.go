@@ -4,27 +4,23 @@ import (
 	"encoding/gob"
 	"fmt"
 	"net"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/gen2brain/beeep"
+	"github.com/hasan/superclock/app"
 	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/models"
-	"github.com/hasan/superclock/cmd"
 	"github.com/hasan/superclock/pkg/logger"
 )
 
-// DaemonState is like bubble state.Model
-type DaemonState struct {
-	mu       sync.Mutex
-	Timeout  time.Duration // total countdown time
-	Interval time.Duration // tick interval
-	Elapsed  time.Duration // time passed
-	Running  bool
+// DaemonStateMutex is like bubble state.Model
+type DaemonStateMutex struct {
+	mu sync.Mutex
+	app.DaemonStateMsg
 }
 
-func (s *DaemonState) Tick() {
+func (s *DaemonStateMutex) Tick() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -47,28 +43,28 @@ func (s *DaemonState) Tick() {
 }
 
 // TODO: check time before play
-func (s *DaemonState) Start() {
+func (s *DaemonStateMutex) Start() {
 	s.mu.Lock()
 	s.Running = true
 	s.mu.Unlock()
 }
-func (s *DaemonState) Stop() {
+func (s *DaemonStateMutex) Stop() {
 	s.mu.Lock()
 	s.Running = false
 	s.mu.Unlock()
 }
-func (s *DaemonState) Reset() {
+func (s *DaemonStateMutex) Reset() {
 	s.mu.Lock()
 	s.Running = false
 	s.Elapsed = 0
 	s.mu.Unlock()
 }
-func (s *DaemonState) Toggle() {
+func (s *DaemonStateMutex) Toggle() {
 	s.mu.Lock()
 	s.Running = !s.Running
 	s.mu.Unlock()
 }
-func (s *DaemonState) SetTimer(timeout time.Duration, play any) {
+func (s *DaemonStateMutex) SetTimer(timeout time.Duration, play any) {
 	s.mu.Lock()
 	s.Elapsed = 0
 	s.Timeout = timeout
@@ -80,47 +76,8 @@ func (s *DaemonState) SetTimer(timeout time.Duration, play any) {
 	s.mu.Unlock()
 }
 
-func main() {
-	closeLogger := cmd.SetupDotEnv()
-	defer closeLogger()
+func handleConn(conn net.Conn, state *DaemonStateMutex) {
 
-	cmd.RegisterGob()
-
-	state := &DaemonState{
-		Timeout:  0,           // default timeout
-		Interval: time.Second, // tick every 1s
-	}
-
-	// // Background tick loop
-	go func() {
-		ticker := time.NewTicker(state.Interval)
-		defer ticker.Stop()
-		for range ticker.C {
-			state.Tick()
-		}
-	}()
-
-	// TCP server
-	ln, err := net.Listen("tcp", constants.Address)
-	if err != nil {
-		fmt.Println("Error listening:", err)
-		os.Exit(1)
-	}
-	defer ln.Close()
-
-	fmt.Println("Daemon running...")
-
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			fmt.Println("Error accepting:", err)
-			continue
-		}
-		go handleConn(conn, state)
-	}
-}
-
-func handleConn(conn net.Conn, state *DaemonState) {
 	defer conn.Close()
 
 	dec := gob.NewDecoder(conn)
@@ -155,6 +112,6 @@ func handleConn(conn net.Conn, state *DaemonState) {
 	}
 
 	state.mu.Lock()
-	_ = enc.Encode(state)
+	_ = enc.Encode(state.DaemonStateMsg)
 	state.mu.Unlock()
 }

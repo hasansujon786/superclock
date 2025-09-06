@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hasan/superclock/app/features/timer"
+	"github.com/hasan/superclock/app"
 	"github.com/hasan/superclock/cmd"
 )
+
+func UNUSED(x ...any) {}
 
 func main() {
 	closeLogger := cmd.SetupDotEnv()
@@ -15,9 +17,10 @@ func main() {
 
 	cmd.RegisterGob()
 
-	p := tea.NewProgram(timer.NewModel())
+	app := app.NewApp(app.AppViewPomodoro, app.InitDaemonState())
+	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		fmt.Println("Error starting client:", err)
+		log.Printf("App run failed: %v", err)
 		os.Exit(1)
 	}
 }
