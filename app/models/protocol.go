@@ -6,11 +6,15 @@ import (
 	"github.com/hasan/superclock/app/constants"
 )
 
+type PomodoroStateMsg struct {
+	Timeout time.Duration // total countdown time
+	Elapsed time.Duration // time passed
+	Running bool
+}
+
 type DaemonStateMsg struct {
-	Timeout  time.Duration // total countdown time
 	Interval time.Duration // tick interval
-	Elapsed  time.Duration // time passed
-	Running  bool
+	Pomodoro PomodoroStateMsg
 }
 
 type Request struct {

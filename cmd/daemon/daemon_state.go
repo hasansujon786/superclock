@@ -23,16 +23,14 @@ func (s *DaemonStateMutex) Tick() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if !s.Running {
-		return
-	}
+	if s.Pomodoro.Running {
+		s.Pomodoro.Elapsed += s.Interval
+		if s.Pomodoro.Elapsed >= s.Pomodoro.Timeout {
+			s.Pomodoro.Elapsed = s.Pomodoro.Timeout
+			s.Pomodoro.Running = false
 
-	s.Elapsed += s.Interval
-	if s.Elapsed >= s.Timeout {
-		s.Elapsed = s.Timeout
-		s.Running = false
-
-		_ = beeep.Notify("Timer Alert", "Timer completed!", "")
+			_ = beeep.Notify("Timer Alert", "Timer completed!", "")
+		}
 	}
 
 	// Example: notify every 10s
@@ -44,33 +42,33 @@ func (s *DaemonStateMutex) Tick() {
 // TODO: check time before play
 func (s *DaemonStateMutex) Start() {
 	s.mu.Lock()
-	s.Running = true
+	s.Pomodoro.Running = true
 	s.mu.Unlock()
 }
 func (s *DaemonStateMutex) Stop() {
 	s.mu.Lock()
-	s.Running = false
+	s.Pomodoro.Running = false
 	s.mu.Unlock()
 }
 func (s *DaemonStateMutex) Reset() {
 	s.mu.Lock()
-	s.Running = false
-	s.Elapsed = 0
+	s.Pomodoro.Running = false
+	s.Pomodoro.Elapsed = 0
 	s.mu.Unlock()
 }
 func (s *DaemonStateMutex) Toggle() {
 	s.mu.Lock()
-	s.Running = !s.Running
+	s.Pomodoro.Running = !s.Pomodoro.Running
 	s.mu.Unlock()
 }
 func (s *DaemonStateMutex) SetTimer(timeout time.Duration, play any) {
 	s.mu.Lock()
-	s.Elapsed = 0
-	s.Timeout = timeout
+	s.Pomodoro.Elapsed = 0
+	s.Pomodoro.Timeout = timeout
 
 	switch v := play.(type) {
 	case bool:
-		s.Running = v
+		s.Pomodoro.Running = v
 	}
 	s.mu.Unlock()
 }

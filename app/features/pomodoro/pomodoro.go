@@ -46,7 +46,7 @@ func NewPomodoroWithState(ds models.DaemonStateMsg) PomodoroModel {
 	logger.Info("NewPomodoroWithState")
 	return PomodoroModel{
 		currentView: viewTimer,
-		timer:       timer.New(ds.Timeout - ds.Elapsed),
+		timer:       timer.New(ds.Pomodoro.Timeout - ds.Pomodoro.Elapsed),
 		choices:     []string{"Work", "Break"},
 		choiceTimes: []time.Duration{15 * time.Second, 5 * time.Second},
 	}

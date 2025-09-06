@@ -35,7 +35,7 @@ func NewApp(view AppView, daemonState any) app {
 		logger.Info(daemonState)
 		logger.Info("NewApp Started...")
 
-		if data.Running {
+		if data.Pomodoro.Running {
 			return app{
 				view:      view,
 				timer:     timer.NewTimerClockModel(),
