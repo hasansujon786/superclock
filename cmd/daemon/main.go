@@ -19,7 +19,7 @@ func main() {
 	state := &DaemonStateMutex{
 		DaemonStateMsg: models.DaemonStateMsg{
 			Interval: time.Second, // tick every 1s
-			Pomodoro: models.PomodoroStateMsg{Timeout: 0},
+			Pomodoro: models.PomodoroStateMsg{TotalTime: 0},
 		},
 	}
 

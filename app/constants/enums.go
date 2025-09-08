@@ -1,5 +1,14 @@
 package constants
 
+type AppView int
+
+const (
+	AppViewTimer AppView = iota
+	AppViewStopWatch
+	AppViewPomodoro
+	AppViewNone
+)
+
 // ------------------------------------------------
 // -- Clock State ---------------------------------
 // ------------------------------------------------
@@ -33,7 +42,6 @@ const (
 	CmdGet      Command = "get"
 	CmdSetTimer Command = "set_timer"
 	CmdPlay     Command = "play"
-	CmdPause    Command = "pause"
 	CmdStop     Command = "stop"
 	CmdToggle   Command = "toggle"
 	CmdReset    Command = "reset"

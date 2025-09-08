@@ -7,9 +7,10 @@ import (
 )
 
 type PomodoroStateMsg struct {
-	Timeout time.Duration // total countdown time
-	Elapsed time.Duration // time passed
-	Running bool
+	TotalTime time.Duration // total countdown time
+	Timeout   time.Duration // How long until the timer expires.
+	ModeIdx   int           // Mode name index
+	Running   bool
 }
 
 type DaemonStateMsg struct {
@@ -23,6 +24,7 @@ type Request struct {
 }
 
 type CmdSetTimerPayload struct {
-	Timeout time.Duration
+	ModeIdx int
 	Play    any // bool | nil
+	Timeout time.Duration
 }

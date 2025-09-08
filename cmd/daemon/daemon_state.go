@@ -10,6 +10,7 @@ import (
 	"github.com/gen2brain/beeep"
 	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/models"
+	"github.com/hasan/superclock/app/utils"
 	"github.com/hasan/superclock/pkg/logger"
 )
 
@@ -24,18 +25,26 @@ func (s *DaemonStateMutex) Tick() {
 	defer s.mu.Unlock()
 
 	if s.Pomodoro.Running {
-		s.Pomodoro.Elapsed += s.Interval
-		if s.Pomodoro.Elapsed >= s.Pomodoro.Timeout {
-			s.Pomodoro.Elapsed = s.Pomodoro.Timeout
+		logger.Info("Tick timeout", s.Pomodoro.Timeout)
+
+		s.Pomodoro.Timeout -= s.Interval
+		if s.Pomodoro.Timeout <= 0 {
+			s.Pomodoro.Timeout = 0
 			s.Pomodoro.Running = false
 
-			_ = beeep.Notify("Timer Alert", "Timer completed!", "")
+			beeep.AppName = "SuperClock"
+			_ = beeep.Notify(
+				"Pomodoro",
+				fmt.Sprintf("Timeout %v", utils.FormatDurationHumanize(s.Pomodoro.TotalTime)),
+				"testdata/warning.png",
+			)
+			// beeep.Notify()
 		}
 	}
 
 	// Example: notify every 10s
 	// if int(s.Elapsed.Seconds())%10 == 0 && s.Elapsed.Seconds() != 0 {
-	// 	beeep.Notify("Timer Alert", fmt.Sprintf("Elapsed: %s", s.Elapsed.String()), "")
+	// beeep.Notify("Timer Alert", fmt.Sprintf("Elapsed: %s", s.Elapsed.String()), "")
 	// }
 }
 
@@ -53,24 +62,30 @@ func (s *DaemonStateMutex) Stop() {
 func (s *DaemonStateMutex) Reset() {
 	s.mu.Lock()
 	s.Pomodoro.Running = false
-	s.Pomodoro.Elapsed = 0
+	s.Pomodoro.Timeout = s.Pomodoro.TotalTime
 	s.mu.Unlock()
 }
-func (s *DaemonStateMutex) Toggle() {
+func (s *DaemonStateMutex) Toggle(timeout time.Duration) {
 	s.mu.Lock()
+	s.Pomodoro.Timeout = timeout
 	s.Pomodoro.Running = !s.Pomodoro.Running
 	s.mu.Unlock()
 }
-func (s *DaemonStateMutex) SetTimer(timeout time.Duration, play any) {
-	s.mu.Lock()
-	s.Pomodoro.Elapsed = 0
-	s.Pomodoro.Timeout = timeout
+func (s *DaemonStateMutex) SetTimer(playload any) {
+	if pl, ok := playload.(models.CmdSetTimerPayload); ok {
+		s.mu.Lock()
 
-	switch v := play.(type) {
-	case bool:
-		s.Pomodoro.Running = v
+		s.Pomodoro.Timeout = pl.Timeout
+		s.Pomodoro.TotalTime = pl.Timeout
+		s.Pomodoro.ModeIdx = pl.ModeIdx
+
+		switch v := pl.Play.(type) {
+		case bool:
+			s.Pomodoro.Running = v
+		}
+
+		s.mu.Unlock()
 	}
-	s.mu.Unlock()
 }
 
 func handleConn(conn net.Conn, state *DaemonStateMutex) {
@@ -87,21 +102,18 @@ func handleConn(conn net.Conn, state *DaemonStateMutex) {
 	}
 
 	switch req.Cmd {
-	case constants.CmdPause:
-		state.Stop()
 	case constants.CmdPlay:
-		logger.Info("play")
 		state.Start()
 	case constants.CmdStop:
-		state.Reset()
+		state.Stop()
 	case constants.CmdToggle:
-		state.Toggle()
+		if timeout, ok := req.Payload.(time.Duration); ok {
+			state.Toggle(timeout)
+		}
 	case constants.CmdReset:
 		state.Reset()
 	case constants.CmdSetTimer:
-		if pl, ok := req.Payload.(models.CmdSetTimerPayload); ok {
-			state.SetTimer(pl.Timeout, pl.Play)
-		}
+		state.SetTimer(req.Payload)
 	case constants.CmdGet:
 		// no state change
 	default:

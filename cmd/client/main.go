@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hasan/superclock/app"
+	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/utils"
 	"github.com/hasan/superclock/cmd"
 )
@@ -18,7 +19,7 @@ func main() {
 
 	cmd.RegisterGob()
 
-	app := app.NewApp(app.AppViewPomodoro, utils.InitDaemonState())
+	app := app.NewApp(constants.AppViewPomodoro, utils.InitDaemonState())
 	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Printf("App run failed: %v", err)

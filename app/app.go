@@ -3,6 +3,7 @@ package app
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/features/pomodoro"
 	"github.com/hasan/superclock/app/features/stopwatch"
 	"github.com/hasan/superclock/app/features/timer"
@@ -11,26 +12,17 @@ import (
 	"github.com/hasan/superclock/pkg/logger"
 )
 
-type AppView int
-
-const (
-	AppViewTimer AppView = iota
-	AppViewStopWatch
-	AppViewPomodoro
-	AppViewNone
-)
-
 type app struct {
 	timer     timer.TimerClockModel
 	stopwatch stopwatch.StopWatchModel
 	pomodoro  pomodoro.PomodoroModel
 
-	view          AppView
+	view          constants.AppView
 	quitting      bool
 	width, height int
 }
 
-func NewApp(view AppView, daemonState any) app {
+func NewApp(view constants.AppView, daemonState any) app {
 	if data, ok := daemonState.(models.DaemonStateMsg); ok {
 		logger.Info(daemonState)
 		logger.Info("NewApp Started...")
@@ -55,11 +47,11 @@ func NewApp(view AppView, daemonState any) app {
 
 func (a app) Init() tea.Cmd {
 	switch a.view {
-	case AppViewTimer:
+	case constants.AppViewTimer:
 		return a.timer.Init()
-	case AppViewStopWatch:
+	case constants.AppViewStopWatch:
 		return a.stopwatch.Init()
-	case AppViewPomodoro:
+	case constants.AppViewPomodoro:
 		return a.pomodoro.Init()
 	}
 	return nil
@@ -77,13 +69,13 @@ func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "tab":
 			a.view++
-			if a.view >= AppViewNone {
-				a.view = AppViewTimer
+			if a.view >= constants.AppViewNone {
+				a.view = constants.AppViewTimer
 			}
 		case "shift+tab":
 			a.view--
-			if a.view < AppViewTimer {
-				a.view = AppViewNone - 1
+			if a.view < constants.AppViewTimer {
+				a.view = constants.AppViewNone - 1
 			}
 		case "q", "ctrl+c":
 			a.quitting = true
@@ -98,16 +90,19 @@ func (a app) updateSubModels(msg tea.Msg) (app, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	// Timer
+	a.timer.CurrentAppView = a.view   // inject before update
 	newTimer, cmd := a.timer.Update(msg)
 	a.timer = newTimer.(timer.TimerClockModel)
 	cmds = append(cmds, cmd)
 
 	// Stopwatch
+	a.stopwatch.CurrentAppView = a.view
 	newStopwatch, cmd := a.stopwatch.Update(msg)
 	a.stopwatch = newStopwatch.(stopwatch.StopWatchModel)
 	cmds = append(cmds, cmd)
 
 	// Pomodoro
+	a.pomodoro.CurrentAppView = a.view
 	newPomodoro, cmd := a.pomodoro.Update(msg)
 	a.pomodoro = newPomodoro.(pomodoro.PomodoroModel)
 	cmds = append(cmds, cmd)
@@ -123,11 +118,11 @@ func (a app) View() string {
 
 	view := ""
 	switch a.view {
-	case AppViewTimer:
+	case constants.AppViewTimer:
 		view = a.timer.View()
-	case AppViewStopWatch:
+	case constants.AppViewStopWatch:
 		view = a.stopwatch.View()
-	case AppViewPomodoro:
+	case constants.AppViewPomodoro:
 		view = a.pomodoro.View()
 	}
 

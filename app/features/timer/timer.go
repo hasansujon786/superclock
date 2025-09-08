@@ -11,10 +11,13 @@ import (
 )
 
 type TimerClockModel struct {
-	timer         timer.Model
-	paused        bool
-	picker        ui.TimerWheelModel
-	width, height int
+	timer          timer.Model
+	paused         bool
+	
+	picker         ui.TimerWheelModel
+	
+	width, height  int
+	CurrentAppView constants.AppView
 }
 
 func NewTimerClockModel() TimerClockModel {
@@ -47,6 +50,10 @@ func (m TimerClockModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		if constants.AppViewTimer != m.CurrentAppView {
+			return m, nil
+		}
+
 		switch (constants.ClockState{Running: m.timer.Running(), Paused: m.paused}) {
 		// Clock is running or the clock is paused
 		case constants.ClockStateRunning, constants.ClockStatePaused:

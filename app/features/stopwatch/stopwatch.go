@@ -7,17 +7,19 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hasan/superclock/app/ui"
 	"github.com/hasan/superclock/app/constants"
 	"github.com/hasan/superclock/app/styles"
+	"github.com/hasan/superclock/app/ui"
 	"github.com/hasan/superclock/app/utils"
 )
 
 type StopWatchModel struct {
-	stopwatch     stopwatch.Model
-	paused        bool
-	laps          []lap
-	width, height int
+	stopwatch stopwatch.Model
+	paused    bool
+	laps      []lap
+
+	width, height  int
+	CurrentAppView constants.AppView
 }
 
 func NewStopWatchModel() StopWatchModel {
@@ -54,6 +56,10 @@ func (m StopWatchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case tea.KeyMsg:
+		if constants.AppViewStopWatch != m.CurrentAppView {
+			return m, nil
+		}
+
 		switch msg.String() {
 
 		case " ":
